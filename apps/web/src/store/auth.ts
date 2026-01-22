@@ -45,7 +45,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             const { user, token } = response.data
             
             // Store token in localStorage for API client
-            localStorage.setItem('auth_token', token)
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('auth_token', token)
+              localStorage.setItem('user_data', JSON.stringify(user))
+            }
             
             set({
               user,
@@ -58,7 +61,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             throw new Error('Login failed')
           }
         } catch (error: any) {
-          const errorMessage = error.response?.data?.error || 'Login failed'
+          console.error('Login error details:', error)
+          const errorMessage = error.response?.data?.error || error.message || 'Login failed. Please check your credentials.'
           set({
             error: errorMessage,
             isLoading: false,
@@ -66,6 +70,13 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             user: null,
             token: null
           })
+          
+          // Clear any stale tokens
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('auth_token')
+            localStorage.removeItem('user_data')
+          }
+          
           throw error
         }
       },

@@ -30,9 +30,15 @@ export default function LoginPage() {
 
     try {
       await login(email, password)
-      router.push('/') // Redirect to main app
-    } catch (err) {
-      // Error is handled by the store
+      // Wait a moment for the state to update
+      setTimeout(() => {
+        router.push('/') // Redirect to main app
+      }, 100)
+    } catch (err: any) {
+      // Enhanced error handling
+      console.error('Login error:', err)
+      const errorMessage = err?.response?.data?.error || err?.message || 'Login failed'
+      setFormError(errorMessage)
     }
   }
 

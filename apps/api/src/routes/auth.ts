@@ -176,7 +176,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
       const user = await prisma.user.update({
         where: { id: request.auth.userId },
-        data: updateData,
+        data: {
+          ...updateData,
+          // Ensure undefined values are converted to null for Prisma
+          displayName: updateData.displayName ?? undefined,
+          avatar: updateData.avatar ?? undefined,
+          status: updateData.status ?? undefined,
+        },
         select: {
           id: true,
           email: true,
