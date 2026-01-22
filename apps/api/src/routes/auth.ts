@@ -3,10 +3,13 @@ import { prisma } from '../utils/database.js'
 import { hashPassword, verifyPassword, generateToken } from '../utils/auth.js'
 import { registerSchema, loginSchema, updateProfileSchema } from '../utils/validation.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { rateLimits } from '../middleware/security.js'
 
 export default async function authRoutes(fastify: FastifyInstance) {
-  // Register a new user
-  fastify.post('/register', async (request, reply) => {
+  // Register a new user - with rate limiting for security
+  fastify.post('/register', { 
+    preHandler: [rateLimits.register] 
+  }, async (request, reply) => {
     try {
       const { email, username, displayName, password } = registerSchema.parse(request.body)
 
@@ -71,8 +74,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   })
 
-  // Login user
-  fastify.post('/login', async (request, reply) => {
+  // Login user - with rate limiting for security
+  fastify.post('/login', { 
+    preHandler: [rateLimits.auth] 
+  }, async (request, reply) => {
     try {
       const { email, password } = loginSchema.parse(request.body)
 
@@ -174,15 +179,15 @@ export default async function authRoutes(fastify: FastifyInstance) {
     try {
       const updateData = updateProfileSchema.parse(request.body)
 
+      // Filter out undefined values for Prisma strict typing
+      const data: any = {}
+      if (updateData.displayName !== undefined) data.displayName = updateData.displayName
+      if (updateData.avatar !== undefined) data.avatar = updateData.avatar
+      if (updateData.status !== undefined) data.status = updateData.status
+
       const user = await prisma.user.update({
         where: { id: request.auth.userId },
-        data: {
-          ...updateData,
-          // Ensure undefined values are converted to null for Prisma
-          displayName: updateData.displayName ?? undefined,
-          avatar: updateData.avatar ?? undefined,
-          status: updateData.status ?? undefined,
-        },
+        data,
         select: {
           id: true,
           email: true,

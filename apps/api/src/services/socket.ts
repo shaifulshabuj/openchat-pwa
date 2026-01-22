@@ -178,15 +178,18 @@ export const setupSocketIO = async (io: Server) => {
           return
         }
 
-        // Create message in database
+        // Create message in database  
+        const messageData: any = {
+          content,
+          type: type as any,
+          senderId: userId,
+          chatId,
+        }
+        
+        if (replyToId) messageData.replyToId = replyToId
+
         const message = await prisma.message.create({
-          data: {
-            content,
-            type: type as any,
-            senderId: userId,
-            chatId,
-            replyToId
-          },
+          data: messageData,
           include: {
             sender: {
               select: {

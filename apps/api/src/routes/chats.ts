@@ -2,6 +2,8 @@ import { FastifyInstance } from 'fastify'
 import { prisma } from '../utils/database.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { createChatSchema, sendMessageSchema } from '../utils/validation.js'
+import { rateLimits } from '../middleware/security.js'
+import { z } from 'zod'
 
 export default async function chatRoutes(fastify: FastifyInstance) {
   // Get user's chats
@@ -127,21 +129,26 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       }
 
       // Create chat
+      const chatData: any = {
+        type,
+        participants: {
+          create: [
+            { userId: request.auth.userId },
+            ...participants.map((userId: string) => ({ userId }))
+          ]
+        }
+      }
+      
+      if (type !== 'PRIVATE' && name) chatData.name = name
+      if (description) chatData.description = description
+      if (type !== 'PRIVATE') {
+        chatData.admins = {
+          create: { userId: request.auth.userId }
+        }
+      }
+
       const chat = await prisma.chat.create({
-        data: {
-          type,
-          name: type === 'PRIVATE' ? undefined : name,
-          description,
-          participants: {
-            create: [
-              { userId: request.auth.userId },
-              ...participants.map((userId: string) => ({ userId }))
-            ]
-          },
-          admins: type !== 'PRIVATE' ? {
-            create: { userId: request.auth.userId }
-          } : undefined
-        },
+        data: chatData,
         include: {
           participants: {
             include: {
@@ -341,12 +348,18 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       }
 
       // Create message
+      const messageCreateData: any = {
+        content: messageData.content,
+        type: messageData.type,
+        senderId: request.user!.userId,
+        chatId,
+      }
+      
+      if (messageData.replyToId) messageCreateData.replyToId = messageData.replyToId
+      if (messageData.metadata) messageCreateData.metadata = messageData.metadata
+
       const message = await prisma.message.create({
-        data: {
-          ...messageData,
-          senderId: request.user!.userId,
-          chatId
-        },
+        data: messageCreateData,
         include: {
           sender: {
             select: {
@@ -482,6 +495,164 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       return reply.send({
         success: true,
         message: 'Left chat successfully'
+      })
+    } catch (error) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Edit a message
+  fastify.put('/:chatId/messages/:messageId', { 
+    preHandler: [rateLimits.api, authMiddleware] 
+  }, async (request: any, reply) => {
+    try {
+      const { chatId, messageId } = request.params
+      const { content } = z.object({ 
+        content: z.string().min(1).max(1000) 
+      }).parse(request.body)
+      
+      const userId = request.user.userId
+
+      // Find the message and verify ownership
+      const message = await prisma.message.findFirst({
+        where: {
+          id: messageId,
+          chatId,
+          senderId: userId,
+          isDeleted: false
+        }
+      })
+
+      if (!message) {
+        return reply.status(404).send({
+          error: 'Message not found or you can only edit your own messages'
+        })
+      }
+
+      // Check if message is too old to edit (24 hours)
+      const now = new Date()
+      const messageAge = now.getTime() - message.createdAt.getTime()
+      const maxAge = 24 * 60 * 60 * 1000 // 24 hours
+
+      if (messageAge > maxAge) {
+        return reply.status(400).send({
+          error: 'Message is too old to edit (24 hour limit)'
+        })
+      }
+
+      // Update the message
+      const updatedMessage = await prisma.message.update({
+        where: { id: messageId },
+        data: {
+          content,
+          isEdited: true,
+          updatedAt: new Date()
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatar: true
+            }
+          }
+        }
+      })
+
+      // Emit real-time update
+      const io = (fastify as any).io
+      if (io) {
+        io.to(chatId).emit('message-edited', {
+          message: updatedMessage,
+          chatId
+        })
+      }
+
+      return reply.send({
+        success: true,
+        data: updatedMessage
+      })
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return reply.status(400).send({
+          error: 'Validation failed',
+          details: error.errors
+        })
+      }
+
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Delete a message (soft delete)
+  fastify.delete('/:chatId/messages/:messageId', { 
+    preHandler: [rateLimits.api, authMiddleware] 
+  }, async (request: any, reply) => {
+    try {
+      const { chatId, messageId } = request.params
+      const userId = request.user.userId
+
+      // Find the message and verify ownership or admin rights
+      const message = await prisma.message.findFirst({
+        where: {
+          id: messageId,
+          chatId,
+          isDeleted: false
+        },
+        include: {
+          chat: {
+            include: {
+              admins: {
+                where: {
+                  userId: userId
+                }
+              }
+            }
+          }
+        }
+      })
+
+      if (!message) {
+        return reply.status(404).send({
+          error: 'Message not found'
+        })
+      }
+
+      // Check if user can delete (own message or admin)
+      const canDelete = message.senderId === userId || message.chat.admins.length > 0
+
+      if (!canDelete) {
+        return reply.status(403).send({
+          error: 'You can only delete your own messages or you need admin rights'
+        })
+      }
+
+      // Soft delete the message
+      const deletedMessage = await prisma.message.update({
+        where: { id: messageId },
+        data: {
+          isDeleted: true,
+          deletedAt: new Date(),
+          content: '[Message deleted]'
+        }
+      })
+
+      // Emit real-time update
+      const io = (fastify as any).io
+      if (io) {
+        io.to(chatId).emit('message-deleted', {
+          messageId,
+          chatId,
+          deletedBy: userId
+        })
+      }
+
+      return reply.send({
+        success: true,
+        message: 'Message deleted successfully'
       })
     } catch (error) {
       fastify.log.error(error)
