@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -17,7 +17,7 @@ model User {
   displayName String
   avatar      String?
   password    String
-  status      UserStatus @default(OFFLINE)
+  status      String   @default("OFFLINE") // ONLINE, OFFLINE, AWAY, BUSY
   lastSeen    DateTime?
   isVerified  Boolean  @default(false)
   createdAt   DateTime @default(now())
@@ -33,7 +33,7 @@ model User {
 
 model Chat {
   id          String   @id @default(cuid())
-  type        ChatType @default(PRIVATE)
+  type        String   @default("PRIVATE") // PRIVATE, GROUP, CHANNEL
   name        String?
   description String?
   avatar      String?
@@ -82,11 +82,11 @@ model ChatAdmin {
 model Message {
   id        String      @id @default(cuid())
   content   String
-  type      MessageType @default(TEXT)
+  type      String      @default("TEXT") // TEXT, IMAGE, FILE, VOICE, VIDEO, LOCATION, CONTACT, SYSTEM
   senderId  String
   chatId    String
   replyToId String?
-  metadata  Json?
+  metadata  String?     // JSON string for SQLite compatibility
   isEdited  Boolean     @default(false)
   isDeleted Boolean     @default(false)
   createdAt DateTime    @default(now())
@@ -100,28 +100,4 @@ model Message {
   replies Message[] @relation("MessageReply")
 
   @@map("messages")
-}
-
-enum UserStatus {
-  ONLINE
-  OFFLINE
-  AWAY
-  BUSY
-}
-
-enum ChatType {
-  PRIVATE
-  GROUP
-  CHANNEL
-}
-
-enum MessageType {
-  TEXT
-  IMAGE
-  FILE
-  VOICE
-  VIDEO
-  LOCATION
-  CONTACT
-  SYSTEM
 }

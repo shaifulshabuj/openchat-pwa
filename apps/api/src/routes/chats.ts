@@ -5,13 +5,13 @@ import { createChatSchema, sendMessageSchema } from '../utils/validation.js'
 
 export default async function chatRoutes(fastify: FastifyInstance) {
   // Get user's chats
-  fastify.get('/', { preHandler: authMiddleware }, async (request, reply) => {
+  fastify.get('/', { preHandler: authMiddleware }, async (request: any, reply) => {
     try {
       const chats = await prisma.chat.findMany({
         where: {
           participants: {
             some: {
-              userId: request.user!.userId,
+              userId: request.auth.userId,
               leftAt: null
             }
           }
@@ -55,13 +55,13 @@ export default async function chatRoutes(fastify: FastifyInstance) {
 
       // Calculate unread count for each chat
       const chatsWithUnreadCount = await Promise.all(
-        chats.map(async (chat) => {
-          const participant = chat.participants.find(p => p.userId === request.user!.userId)
+        chats.map(async (chat: any) => {
+          const participant = chat.participants.find((p: any) => p.userId === request.auth.userId)
           
           const unreadCount = await prisma.message.count({
             where: {
               chatId: chat.id,
-              senderId: { not: request.user!.userId },
+              senderId: { not: request.auth.userId },
               createdAt: {
                 gt: participant?.joinedAt || new Date(0)
               }
@@ -87,7 +87,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
   })
 
   // Create a new chat
-  fastify.post('/', { preHandler: authMiddleware }, async (request, reply) => {
+  fastify.post('/', { preHandler: authMiddleware }, async (request: any, reply) => {
     try {
       const { type, name, description, participants } = createChatSchema.parse(request.body)
 
@@ -104,7 +104,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
             participants: {
               every: {
                 userId: {
-                  in: [request.user!.userId, participants[0]]
+                  in: [request.auth.userId, participants[0]]
                 }
               }
             }
@@ -134,12 +134,12 @@ export default async function chatRoutes(fastify: FastifyInstance) {
           description,
           participants: {
             create: [
-              { userId: request.user!.userId },
-              ...participants.map(userId => ({ userId }))
+              { userId: request.auth.userId },
+              ...participants.map((userId: string) => ({ userId }))
             ]
           },
           admins: type !== 'PRIVATE' ? {
-            create: { userId: request.user!.userId }
+            create: { userId: request.auth.userId }
           } : undefined
         },
         include: {
@@ -185,7 +185,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       const participation = await prisma.chatParticipant.findUnique({
         where: {
           userId_chatId: {
-            userId: request.user!.userId,
+            userId: request.auth.userId,
             chatId
           }
         }

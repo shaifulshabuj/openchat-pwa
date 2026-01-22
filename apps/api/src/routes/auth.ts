@@ -4,14 +4,6 @@ import { hashPassword, verifyPassword, generateToken } from '../utils/auth.js'
 import { registerSchema, loginSchema, updateProfileSchema } from '../utils/validation.js'
 import { authMiddleware } from '../middleware/auth.js'
 
-interface AuthenticatedRequest {
-  auth: {
-    userId: string
-    email: string
-    username: string
-  }
-}
-
 export default async function authRoutes(fastify: FastifyInstance) {
   // Register a new user
   fastify.post('/register', async (request, reply) => {
@@ -145,7 +137,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   })
 
   // Get current user profile
-  fastify.get('/me', { preHandler: authMiddleware }, async (request: AuthenticatedRequest, reply) => {
+  fastify.get('/me', { preHandler: authMiddleware }, async (request: any, reply) => {
     try {
       const user = await prisma.user.findUnique({
         where: { id: request.auth.userId },
@@ -178,7 +170,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   })
 
   // Update user profile
-  fastify.patch('/me', { preHandler: authMiddleware }, async (request: AuthenticatedRequest, reply) => {
+  fastify.patch('/me', { preHandler: authMiddleware }, async (request: any, reply) => {
     try {
       const updateData = updateProfileSchema.parse(request.body)
 
@@ -215,7 +207,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   })
 
   // Logout user
-  fastify.post('/logout', { preHandler: authMiddleware }, async (request: AuthenticatedRequest, reply) => {
+  fastify.post('/logout', { preHandler: authMiddleware }, async (request: any, reply) => {
     try {
       // Update user status to offline
       await prisma.user.update({

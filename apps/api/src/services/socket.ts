@@ -1,4 +1,4 @@
-import { Server } from 'socket.io'
+import { Server, Socket } from 'socket.io'
 import { createAdapter } from '@socket.io/redis-adapter'
 import { createClient } from 'redis'
 import { getUserFromToken } from '../utils/auth.js'
@@ -42,7 +42,7 @@ export const setupSocketIO = async (io: Server) => {
   }
 
   // Authentication middleware
-  io.use(async (socket, next) => {
+  io.use(async (socket: Socket, next) => {
     try {
       const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '')
       
@@ -66,8 +66,8 @@ export const setupSocketIO = async (io: Server) => {
       }
 
       // Attach user info to socket
-      (socket as any).userId = payload.userId
-      (socket as any).username = payload.username
+      ;(socket as any).userId = payload.userId
+      ;(socket as any).username = payload.username
       
       next()
     } catch (error) {
@@ -76,7 +76,7 @@ export const setupSocketIO = async (io: Server) => {
   })
 
   // Connection handling
-  io.on('connection', async (socket: AuthenticatedSocket) => {
+  io.on('connection', async (socket: Socket) => {
     const userId = (socket as any).userId
     const username = (socket as any).username
     

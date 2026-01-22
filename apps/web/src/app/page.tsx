@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/auth'
 import { useSocket } from '@/hooks/useSocket'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ChatList } from '@/components/ChatList'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('chats')
@@ -128,49 +129,9 @@ export default function Home() {
         <main className="flex-1 overflow-hidden">
           {activeTab === 'chats' && (
             <div className="h-full flex flex-col">
-              {/* Demo Chat Interface */}
-              <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4 mx-auto">
-                    <MessageSquare className="w-8 h-8 text-green-600 dark:text-green-400" />
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    Phase 1 MVP Complete! 🎉
-                  </h2>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1 max-w-md mx-auto">
-                    <p>✅ User authentication system</p>
-                    <p>✅ Real-time Socket.io connection</p>
-                    <p>✅ Database schema with Prisma</p>
-                    <p>✅ Modern React UI components</p>
-                    <p>✅ JWT token-based auth</p>
-                    <p>✅ TypeScript throughout</p>
-                  </div>
-                  
-                  <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-                      Demo Socket Connection
-                    </h3>
-                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                      Test real-time messaging (messages won't persist - this is just a demo):
-                    </p>
-                    <div className="flex gap-2">
-                      <Input
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        placeholder="Type a demo message..."
-                        onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                        className="flex-1"
-                      />
-                      <Button 
-                        onClick={handleSendMessage}
-                        disabled={!message.trim() || !isConnected}
-                        size="sm"
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+              {/* Chat List */}
+              <div className="flex-1 overflow-y-auto">
+                <ChatList />
               </div>
 
               {/* Floating Action Button */}

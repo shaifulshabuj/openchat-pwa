@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'export',
-  trailingSlash: true,
+  // Removed static export for development to support dynamic routes
+  // output: 'export',
+  // trailingSlash: true,
   images: {
     unoptimized: true,
   },
@@ -11,7 +12,7 @@ const nextConfig: NextConfig = {
     typedRoutes: true,
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001',
     NEXT_PUBLIC_APP_NAME: 'OpenChat PWA',
   },
 };

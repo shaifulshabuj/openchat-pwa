@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken'
+import jwt, { SignOptions } from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { FastifyRequest } from 'fastify'
 
@@ -19,7 +19,10 @@ export const verifyPassword = async (password: string, hashedPassword: string): 
 }
 
 export const generateToken = (payload: JWTPayload): string => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' })
+  const options: SignOptions = { 
+    expiresIn: '7d'  // Use string literal instead of env variable for type safety
+  }
+  return jwt.sign(payload, JWT_SECRET, options)
 }
 
 export const verifyToken = (token: string): JWTPayload => {

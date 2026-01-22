@@ -2,16 +2,7 @@ import { FastifyReply, FastifyRequest } from 'fastify'
 import { extractTokenFromRequest, getUserFromToken } from '../utils/auth.js'
 import { prisma } from '../utils/database.js'
 
-// Extend FastifyRequest without conflicting with JWT plugin
-interface AuthenticatedRequest extends FastifyRequest {
-  auth?: {
-    userId: string
-    email: string
-    username: string
-  }
-}
-
-export const authMiddleware = async (request: AuthenticatedRequest, reply: FastifyReply) => {
+export const authMiddleware = async (request: any, reply: FastifyReply) => {
   const token = extractTokenFromRequest(request)
   
   if (!token) {
@@ -40,7 +31,7 @@ export const authMiddleware = async (request: AuthenticatedRequest, reply: Fasti
   }
 }
 
-export const optionalAuthMiddleware = async (request: AuthenticatedRequest, reply: FastifyReply) => {
+export const optionalAuthMiddleware = async (request: any, reply: FastifyReply) => {
   const token = extractTokenFromRequest(request)
   
   if (token) {
