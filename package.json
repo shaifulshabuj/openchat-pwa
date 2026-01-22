@@ -1,0 +1,37 @@
+{
+  "name": "openchat-pwa",
+  "version": "1.0.0",
+  "description": "Open-Source, Cross-Platform Progressive Web App for Modern Social Communication",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+  },
+  "devDependencies": {
+    "@turbo/gen": "^1.12.4",
+    "turbo": "^1.12.4",
+    "prettier": "^3.2.5",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  },
+  "packageManager": "pnpm@8.15.1",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shaifulshabuj/openchat-pwa"
+  },
+  "author": "Shaiful Shabuj",
+  "license": "Apache-2.0"
+}
