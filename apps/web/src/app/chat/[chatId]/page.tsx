@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Send, Smile, Paperclip, Phone, Video, MoreVertical } from 'lucide-react'
+import { ArrowLeft, Send, Smile, Paperclip, Phone, Video, MoreVertical, Image as ImageIcon, FileText, Download } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSocket } from '@/hooks/useSocket'
 import { chatAPI, type Chat, type Message } from '@/lib/api'
+import { FileUpload } from '@/components/FileUpload'
+import { MessageReactions } from '@/components/MessageReactions'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 
@@ -24,6 +26,7 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [chat, setChat] = useState<Chat | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isTyping, setIsTyping] = useState<string[]>([])
+  const [showFileUpload, setShowFileUpload] = useState(false)
   
   const { user } = useAuthStore()
   const { isConnected, on, off, joinChat, sendMessage, startTyping, stopTyping } = useSocket()
@@ -141,6 +144,102 @@ export default function ChatPage({ params }: ChatPageProps) {
     return null
   }
 
+  const handleFileUploaded = (fileInfo: any) => {
+    // Send file message
+    const fileMessage = `📎 ${fileInfo.filename}`
+    if (isConnected) {
+      sendMessage(chatId, fileMessage, 'FILE')
+    }
+  }
+
+  const handleAddReaction = async (messageId: string, emoji: string) => {
+    try {
+      // Add reaction via API
+      // await chatAPI.addReaction(messageId, emoji)
+      
+      // For demo purposes, add locally
+      setMessages(prev => prev.map((msg: any) => {
+        if (msg.id === messageId) {
+          const reactions = msg.reactions || []
+          const existingReaction = reactions.find((r: any) => r.emoji === emoji)
+          
+          if (existingReaction) {
+            existingReaction.count += 1
+            existingReaction.hasReacted = true
+          } else {
+            reactions.push({
+              emoji,
+              count: 1,
+              users: [{ id: user!.id, displayName: user!.displayName }],
+              hasReacted: true
+            })
+          }
+          
+          return { ...msg, reactions }
+        }
+        return msg
+      }))
+    } catch (error) {
+      console.error('Error adding reaction:', error)
+    }
+  }
+
+  const handleRemoveReaction = async (messageId: string, emoji: string) => {
+    try {
+      // Remove reaction via API
+      // await chatAPI.removeReaction(messageId, emoji)
+      
+      // For demo purposes, remove locally
+      setMessages(prev => prev.map((msg: any) => {
+        if (msg.id === messageId) {
+          const reactions = msg.reactions?.map((r: any) => {
+            if (r.emoji === emoji) {
+              return {
+                ...r,
+                count: r.count - 1,
+                hasReacted: false
+              }
+            }
+            return r
+          }).filter((r: any) => r.count > 0) || []
+          
+          return { ...msg, reactions }
+        }
+        return msg
+      }))
+    } catch (error) {
+      console.error('Error removing reaction:', error)
+    }
+  }
+
+  const renderFileMessage = (message: any) => {
+    const isFile = message.type === 'FILE' || message.content.startsWith('📎')
+    
+    if (!isFile) return null
+
+    const filename = message.content.replace('📎 ', '')
+    const fileUrl = message.metadata ? JSON.parse(message.metadata).url : null
+
+    return (
+      <div className="flex items-center gap-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
+        <FileText className="w-6 h-6 text-gray-400" />
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-900 dark:text-white">
+            {filename}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Shared file
+          </p>
+        </div>
+        {fileUrl && (
+          <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+            <Download className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          </button>
+        )}
+      </div>
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -247,13 +346,28 @@ export default function ChatPage({ params }: ChatPageProps) {
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-sm'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      <p className={`text-xs mt-1 ${
-                        isOwn ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
-                      }`}>
-                        {dayjs(message.createdAt).fromNow()}
-                      </p>
+                      {message.type === 'FILE' || message.content.startsWith('📎') ? (
+                        renderFileMessage(message)
+                      ) : (
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      )}
+                      
+                      <div className="flex items-center justify-between mt-1">
+                        <p className={`text-xs ${
+                          isOwn ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
+                        }`}>
+                          {dayjs(message.createdAt).fromNow()}
+                        </p>
+                      </div>
                     </div>
+
+                    {/* Message Reactions */}
+                    <MessageReactions
+                      messageId={message.id}
+                      reactions={(message as any).reactions || []}
+                      onAddReaction={handleAddReaction}
+                      onRemoveReaction={handleRemoveReaction}
+                    />
                   </div>
                 </div>
               )
@@ -264,7 +378,10 @@ export default function ChatPage({ params }: ChatPageProps) {
         {/* Message Input */}
         <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
+            <button 
+              onClick={() => setShowFileUpload(true)}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+            >
               <Paperclip className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
             
@@ -297,6 +414,14 @@ export default function ChatPage({ params }: ChatPageProps) {
               <Send className="w-5 h-5" />
             </Button>
           </div>
+
+          {/* File Upload Modal */}
+          {showFileUpload && (
+            <FileUpload
+              onFileUploaded={handleFileUploaded}
+              onClose={() => setShowFileUpload(false)}
+            />
+          )}
         </footer>
       </div>
     </div>

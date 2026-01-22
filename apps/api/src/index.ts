@@ -8,6 +8,7 @@ import dotenv from 'dotenv'
 import { setupSocketIO } from './services/socket.js'
 import authRoutes from './routes/auth.js'
 import chatRoutes from './routes/chats.js'
+import uploadRoutes from './routes/upload.js'
 
 // Load environment variables
 dotenv.config()
@@ -50,6 +51,7 @@ app.get('/api/hello', async () => {
 // Register route modules
 app.register(authRoutes, { prefix: '/api/auth' })
 app.register(chatRoutes, { prefix: '/api/chats' })
+app.register(uploadRoutes, { prefix: '/api/upload' })
 
 // Users search endpoint
 app.get('/api/users/search', async (request: any, reply) => {

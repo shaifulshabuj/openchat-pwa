@@ -1,0 +1,14 @@
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String   // 👍 👎 ❤️ 😂 😮 😢 😡
+  createdAt DateTime @default(now())
+
+  // Relations
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@map("message_reactions")
+}
