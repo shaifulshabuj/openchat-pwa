@@ -171,7 +171,7 @@ export default async function reactionRoutes(fastify: FastifyInstance) {
       })
 
       // Group reactions by emoji with counts
-      const reactionSummary = reactions.reduce((acc: any, reaction) => {
+      const reactionSummary = reactions.reduce((acc: any, reaction: any) => {
         if (!acc[reaction.emoji]) {
           acc[reaction.emoji] = {
             emoji: reaction.emoji,

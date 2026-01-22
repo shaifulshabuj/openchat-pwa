@@ -8,6 +8,7 @@ import { useSocket } from '@/hooks/useSocket'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ChatList } from '@/components/ChatList'
+import { DarkModeToggle } from '@/components/ui/DarkModeToggle'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('chats')
@@ -75,6 +76,7 @@ export default function Home() {
               <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
                 <Search className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </button>
+              <DarkModeToggle />
               <button 
                 onClick={handleLogout}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"

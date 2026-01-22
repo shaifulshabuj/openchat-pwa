@@ -10,7 +10,9 @@ import authRoutes from './routes/auth.js'
 import chatRoutes from './routes/chats.js'
 import uploadRoutes from './routes/upload.js'
 import reactionRoutes from './routes/reactions.js'
+import docsRoutes from './routes/docs.js'
 import securityPlugin from './middleware/security.js'
+import { rateLimitPlugin } from './middleware/rateLimit.js'
 
 // Load environment variables
 dotenv.config()
@@ -22,6 +24,7 @@ export const build = async () => {
 
   // Security middleware and rate limiting
   app.register(securityPlugin)
+  app.register(rateLimitPlugin)
 
   // Setup CORS
   app.register(cors, {
@@ -66,6 +69,7 @@ export const build = async () => {
   app.register(chatRoutes, { prefix: '/api/chats' })
   app.register(uploadRoutes, { prefix: '/api/upload' })
   app.register(reactionRoutes, { prefix: '/api/reactions' })
+  app.register(docsRoutes)
 
   // Users search endpoint
   app.get('/api/users/search', async (request: any, reply) => {

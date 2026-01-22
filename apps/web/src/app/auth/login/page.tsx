@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuthStore } from '@/store/auth'
+import { useToast } from '@/hooks/use-toast'
 import { MessageSquare, Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
@@ -17,6 +18,7 @@ export default function LoginPage() {
   
   const { login, isLoading, error, clearError } = useAuthStore()
   const router = useRouter()
+  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,6 +32,13 @@ export default function LoginPage() {
 
     try {
       await login(email, password)
+      
+      toast({
+        title: "Welcome back!",
+        description: "You have been successfully logged in.",
+        variant: "success",
+      })
+      
       // Wait a moment for the state to update
       setTimeout(() => {
         router.push('/') // Redirect to main app
@@ -39,6 +48,12 @@ export default function LoginPage() {
       console.error('Login error:', err)
       const errorMessage = err?.response?.data?.error || err?.message || 'Login failed'
       setFormError(errorMessage)
+      
+      toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive",
+      })
     }
   }
 
