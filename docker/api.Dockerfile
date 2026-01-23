@@ -12,8 +12,14 @@ RUN npm install
 # Copy source code
 COPY apps/api ./
 
+# Generate Prisma client
+RUN npm run db:generate
+
+# Build the application
+RUN npm run build
+
 # Expose port
 EXPOSE 8000
 
 # Start the application
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "start"]
