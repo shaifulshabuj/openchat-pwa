@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { MessageSquare } from 'lucide-react'
 import { chatAPI, type Chat } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
+import { useToast } from '@/hooks/use-toast'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 
@@ -14,6 +15,7 @@ export function ChatList() {
   const [chats, setChats] = useState<Chat[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { user } = useAuthStore()
+  const { toast } = useToast()
   const router = useRouter()
 
   useEffect(() => {
@@ -25,6 +27,11 @@ export function ChatList() {
         }
       } catch (error) {
         console.error('Error loading chats:', error)
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to load chats. Please refresh the page.',
+        })
       } finally {
         setIsLoading(false)
       }

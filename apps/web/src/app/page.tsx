@@ -22,22 +22,29 @@ import { DarkModeToggle } from '@/components/ui/DarkModeToggle'
 export default function Home() {
   const [activeTab, setActiveTab] = useState('chats')
   const [message, setMessage] = useState('')
+  const [mounted, setMounted] = useState(false)
   const { user, isAuthenticated, isLoading, logout, checkAuth } = useAuthStore()
   const { isConnected, joinChat, sendMessage } = useSocket()
   const router = useRouter()
 
+  // Handle hydration mismatch for static export
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Check authentication on mount
   useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
+    if (mounted) {
+      checkAuth()
+    }
+  }, [checkAuth, mounted])
 
   // Redirect to login if not authenticated (but allow time for auth check to complete)
   useEffect(() => {
-    // Only redirect to login if auth check has completed and we're still not authenticated
-    if (!isLoading && !isAuthenticated && user === null) {
+    if (mounted && !isLoading && !isAuthenticated && user === null) {
       router.push('/auth/login')
     }
-  }, [isLoading, isAuthenticated, user, router])
+  }, [mounted, isLoading, isAuthenticated, user, router])
 
   const handleLogout = async () => {
     await logout()
@@ -52,13 +59,13 @@ export default function Home() {
     }
   }
 
-  // Show loading state while checking auth
-  if (!isAuthenticated || !user) {
+  // Show loading state during initial hydration or auth check
+  if (!mounted || isLoading || (!isAuthenticated && user === null)) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">{!mounted ? 'Initializing...' : 'Loading...'}</p>
         </div>
       </div>
     )

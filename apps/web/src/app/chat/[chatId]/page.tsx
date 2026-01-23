@@ -2,11 +2,23 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Send, Smile, Paperclip, Phone, Video, MoreVertical, Image as ImageIcon, FileText, Download } from 'lucide-react'
+import {
+  ArrowLeft,
+  Send,
+  Smile,
+  Paperclip,
+  Phone,
+  Video,
+  MoreVertical,
+  Image as ImageIcon,
+  FileText,
+  Download,
+} from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSocket } from '@/hooks/useSocket'
+import { useToast } from '@/hooks/use-toast'
 import { chatAPI, type Chat, type Message } from '@/lib/api'
 import { FileUpload } from '@/components/FileUpload'
 import { MessageReactions } from '@/components/MessageReactions'
@@ -36,14 +48,15 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null)
   const [messageReadStatus, setMessageReadStatus] = useState<Record<string, ReadStatus>>({})
   const [unreadMessages, setUnreadMessages] = useState<Set<string>>(new Set())
-  
+
   const { user } = useAuthStore()
   const { isConnected, on, off, joinChat, sendMessage, startTyping, stopTyping } = useSocket()
+  const { toast } = useToast()
   const router = useRouter()
 
   // Extract chatId from async params
   useEffect(() => {
-    params.then(resolvedParams => {
+    params.then((resolvedParams) => {
       setChatId(resolvedParams.chatId)
     })
   }, [params])
@@ -51,18 +64,18 @@ export default function ChatPage({ params }: ChatPageProps) {
   // Load chat details and messages
   useEffect(() => {
     if (!chatId) return
-    
+
     const loadChatData = async () => {
       try {
         const [chatResponse, messagesResponse] = await Promise.all([
           chatAPI.getChatDetails(chatId),
-          chatAPI.getChatMessages(chatId)
+          chatAPI.getChatMessages(chatId),
         ])
-        
+
         if (chatResponse.success) {
           setChat(chatResponse.data)
         }
-        
+
         if (messagesResponse.success) {
           setMessages(messagesResponse.data)
         }
@@ -84,96 +97,121 @@ export default function ChatPage({ params }: ChatPageProps) {
       // Listen for new messages
       on('new-message', ({ message }: { message: any }) => {
         if (message.chatId === chatId) {
-          setMessages(prev => [...prev, message])
+          setMessages((prev) => [...prev, message])
         }
       })
 
       // Listen for typing indicators
       on('user-typing', ({ userId, username }: { userId: string; username: string }) => {
         if (userId !== user?.id) {
-          setIsTyping(prev => [...prev.filter(u => u !== username), username])
+          setIsTyping((prev) => [...prev.filter((u) => u !== username), username])
         }
       })
 
       on('user-stopped-typing', ({ userId }: { userId: string }) => {
         if (userId !== user?.id) {
-          setIsTyping(prev => prev.filter(u => u !== userId))
+          setIsTyping((prev) => prev.filter((u) => u !== userId))
         }
       })
 
       // Listen for message edits
       on('message-edited', ({ message }: { message: any }) => {
         if (message.chatId === chatId) {
-          setMessages(prev => prev.map(msg => 
-            msg.id === message.id 
-              ? { ...msg, content: message.content, isEdited: true, updatedAt: message.updatedAt }
-              : msg
-          ))
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === message.id
+                ? { ...msg, content: message.content, isEdited: true, updatedAt: message.updatedAt }
+                : msg
+            )
+          )
         }
       })
 
       // Listen for message deletions
-      on('message-deleted', ({ messageId, chatId: eventChatId }: { messageId: string; chatId: string; deletedBy: string }) => {
-        if (eventChatId === chatId) {
-          setMessages(prev => prev.map(msg => 
-            msg.id === messageId 
-              ? { ...msg, content: '[Message deleted]', isDeleted: true }
-              : msg
-          ))
+      on(
+        'message-deleted',
+        ({
+          messageId,
+          chatId: eventChatId,
+        }: {
+          messageId: string
+          chatId: string
+          deletedBy: string
+        }) => {
+          if (eventChatId === chatId) {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === messageId
+                  ? { ...msg, content: '[Message deleted]', isDeleted: true }
+                  : msg
+              )
+            )
+          }
         }
-      })
+      )
 
       // Listen for reaction updates
       on('reaction-added', ({ messageId, reaction }: { messageId: string; reaction: any }) => {
-        setMessages(prev => prev.map(msg => {
-          if (msg.id === messageId) {
-            const reactions = (msg as any).reactions || []
-            const existingReaction = reactions.find((r: any) => r.emoji === reaction.emoji)
-            
-            if (existingReaction) {
-              existingReaction.count += 1
-              existingReaction.users.push({
-                id: reaction.user.id,
-                displayName: reaction.user.displayName
-              })
-            } else {
-              reactions.push({
-                emoji: reaction.emoji,
-                count: 1,
-                users: [{
+        setMessages((prev) =>
+          prev.map((msg) => {
+            if (msg.id === messageId) {
+              const reactions = (msg as any).reactions || []
+              const existingReaction = reactions.find((r: any) => r.emoji === reaction.emoji)
+
+              if (existingReaction) {
+                existingReaction.count += 1
+                existingReaction.users.push({
                   id: reaction.user.id,
-                  displayName: reaction.user.displayName
-                }],
-                hasReacted: reaction.user.id === user?.id
-              })
+                  displayName: reaction.user.displayName,
+                })
+              } else {
+                reactions.push({
+                  emoji: reaction.emoji,
+                  count: 1,
+                  users: [
+                    {
+                      id: reaction.user.id,
+                      displayName: reaction.user.displayName,
+                    },
+                  ],
+                  hasReacted: reaction.user.id === user?.id,
+                })
+              }
+
+              return { ...msg, reactions }
             }
-            
-            return { ...msg, reactions }
-          }
-          return msg
-        }))
+            return msg
+          })
+        )
       })
 
-      on('reaction-removed', ({ messageId, userId, emoji }: { messageId: string; userId: string; emoji: string }) => {
-        setMessages(prev => prev.map(msg => {
-          if (msg.id === messageId) {
-            const reactions = ((msg as any).reactions || []).map((r: any) => {
-              if (r.emoji === emoji) {
-                return {
-                  ...r,
-                  count: r.count - 1,
-                  users: r.users.filter((u: any) => u.id !== userId),
-                  hasReacted: userId === user?.id ? false : r.hasReacted
-                }
+      on(
+        'reaction-removed',
+        ({ messageId, userId, emoji }: { messageId: string; userId: string; emoji: string }) => {
+          setMessages((prev) =>
+            prev.map((msg) => {
+              if (msg.id === messageId) {
+                const reactions = ((msg as any).reactions || [])
+                  .map((r: any) => {
+                    if (r.emoji === emoji) {
+                      return {
+                        ...r,
+                        count: r.count - 1,
+                        users: r.users.filter((u: any) => u.id !== userId),
+                        hasReacted: userId === user?.id ? false : r.hasReacted,
+                      }
+                    }
+                    return r
+                  })
+                  .filter((r: any) => r.count > 0)
+
+                return { ...msg, reactions }
               }
-              return r
-            }).filter((r: any) => r.count > 0)
-            
-            return { ...msg, reactions }
-          }
-          return msg
-        }))
-      })
+              return msg
+            })
+          )
+        }
+      )
 
       return () => {
         off('new-message')
@@ -193,15 +231,22 @@ export default function ChatPage({ params }: ChatPageProps) {
     try {
       // Send via API for persistence
       await chatAPI.sendMessage(chatId, { content: newMessage.trim() })
-      
+
       // Also send via Socket.IO for real-time
       if (isConnected) {
         sendMessage(chatId, newMessage.trim())
       }
-      
+
       setNewMessage('')
     } catch (error) {
       console.error('Error sending message:', error)
+      const errorMessage =
+        (error as any).response?.data?.error || 'Failed to send message. Please try again.'
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage,
+      })
     }
   }
 
@@ -219,24 +264,24 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   const getChatDisplayName = () => {
     if (!chat) return 'Loading...'
-    
+
     if (chat.type === 'GROUP' || chat.type === 'CHANNEL') {
       return chat.name || 'Group Chat'
     }
-    
+
     // For private chats, show the other user's name
-    const otherUser = chat.participants.find(p => p.user.id !== user?.id)
+    const otherUser = chat.participants.find((p) => p.user.id !== user?.id)
     return otherUser?.user.displayName || 'Private Chat'
   }
 
   const getChatAvatar = () => {
     if (chat?.avatar) return chat.avatar
-    
+
     if (chat?.type === 'PRIVATE') {
-      const otherUser = chat.participants.find(p => p.user.id !== user?.id)
+      const otherUser = chat.participants.find((p) => p.user.id !== user?.id)
       return otherUser?.user.avatar
     }
-    
+
     return null
   }
 
@@ -251,69 +296,90 @@ export default function ChatPage({ params }: ChatPageProps) {
   const handleAddReaction = async (messageId: string, emoji: string) => {
     try {
       const result = await reactionsAPI.addReaction(messageId, emoji)
-      
+
       // Update local state optimistically
-      setMessages(prev => prev.map((msg: any) => {
-        if (msg.id === messageId) {
-          const reactions = msg.reactions || []
-          const existingReaction = reactions.find((r: any) => r.emoji === emoji)
-          
-          if (result.action === 'added') {
-            if (existingReaction) {
-              existingReaction.count += 1
-              existingReaction.hasReacted = true
-            } else {
-              reactions.push({
-                emoji,
-                count: 1,
-                users: [{ id: user!.id, displayName: user!.displayName }],
-                hasReacted: true
-              })
-            }
-          } else if (result.action === 'removed') {
-            if (existingReaction) {
-              existingReaction.count -= 1
-              existingReaction.hasReacted = false
-              if (existingReaction.count <= 0) {
-                const index = reactions.indexOf(existingReaction)
-                reactions.splice(index, 1)
+      setMessages((prev) =>
+        prev.map((msg: any) => {
+          if (msg.id === messageId) {
+            const reactions = msg.reactions || []
+            const existingReaction = reactions.find((r: any) => r.emoji === emoji)
+
+            if (result.action === 'added') {
+              if (existingReaction) {
+                existingReaction.count += 1
+                existingReaction.hasReacted = true
+              } else {
+                reactions.push({
+                  emoji,
+                  count: 1,
+                  users: [{ id: user!.id, displayName: user!.displayName }],
+                  hasReacted: true,
+                })
+              }
+            } else if (result.action === 'removed') {
+              if (existingReaction) {
+                existingReaction.count -= 1
+                existingReaction.hasReacted = false
+                if (existingReaction.count <= 0) {
+                  const index = reactions.indexOf(existingReaction)
+                  reactions.splice(index, 1)
+                }
               }
             }
+
+            return { ...msg, reactions }
           }
-          
-          return { ...msg, reactions }
-        }
-        return msg
-      }))
+          return msg
+        })
+      )
     } catch (error) {
       console.error('Error adding reaction:', error)
+      const errorMessage =
+        (error as any).response?.data?.error || 'Failed to add reaction. Please try again.'
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage,
+      })
     }
   }
 
   const handleRemoveReaction = async (messageId: string, emoji: string) => {
     try {
       await reactionsAPI.removeReaction(messageId, emoji)
-      
+
       // Update local state optimistically
-      setMessages(prev => prev.map((msg: any) => {
-        if (msg.id === messageId) {
-          const reactions = msg.reactions?.map((r: any) => {
-            if (r.emoji === emoji) {
-              return {
-                ...r,
-                count: r.count - 1,
-                hasReacted: false
-              }
-            }
-            return r
-          }).filter((r: any) => r.count > 0) || []
-          
-          return { ...msg, reactions }
-        }
-        return msg
-      }))
+      setMessages((prev) =>
+        prev.map((msg: any) => {
+          if (msg.id === messageId) {
+            const reactions =
+              msg.reactions
+                ?.map((r: any) => {
+                  if (r.emoji === emoji) {
+                    return {
+                      ...r,
+                      count: r.count - 1,
+                      hasReacted: false,
+                    }
+                  }
+                  return r
+                })
+                .filter((r: any) => r.count > 0) || []
+
+            return { ...msg, reactions }
+          }
+          return msg
+        })
+      )
     } catch (error) {
       console.error('Error removing reaction:', error)
+      const errorMessage =
+        (error as any).response?.data?.error || 'Failed to remove reaction. Please try again.'
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage,
+      })
     }
   }
 
@@ -323,21 +389,35 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   const handleSaveEdit = async (messageId: string, content: string) => {
     if (!chatId) return
-    
+
     setIsEditLoading(true)
     try {
       const result = await chatAPI.editMessage(chatId, messageId, { content })
-      
+
       // Update local state
-      setMessages(prev => prev.map(msg => 
-        msg.id === messageId 
-          ? { ...msg, content, isEdited: true, updatedAt: new Date().toISOString() }
-          : msg
-      ))
-      
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId
+            ? { ...msg, content, isEdited: true, updatedAt: new Date().toISOString() }
+            : msg
+        )
+      )
+
       setEditingMessage(null)
+      toast({
+        variant: 'success',
+        title: 'Message edited',
+        description: 'Your message has been updated successfully.',
+      })
     } catch (error) {
       console.error('Error editing message:', error)
+      const errorMessage =
+        (error as any).response?.data?.error || 'Failed to edit message. Please try again.'
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage,
+      })
     } finally {
       setIsEditLoading(false)
     }
@@ -345,23 +425,36 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   const handleDeleteMessage = async (messageId: string) => {
     if (!chatId) return
-    
+
     try {
       await chatAPI.deleteMessage(chatId, messageId)
-      
+
       // Update local state
-      setMessages(prev => prev.map(msg => 
-        msg.id === messageId 
-          ? { ...msg, content: '[Message deleted]', isDeleted: true }
-          : msg
-      ))
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId ? { ...msg, content: '[Message deleted]', isDeleted: true } : msg
+        )
+      )
+
+      toast({
+        variant: 'success',
+        title: 'Message deleted',
+        description: 'The message has been deleted successfully.',
+      })
     } catch (error) {
       console.error('Error deleting message:', error)
+      const errorMessage =
+        (error as any).response?.data?.error || 'Failed to delete message. Please try again.'
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage,
+      })
     }
   }
 
   const handleReplyToMessage = (messageId: string) => {
-    const message = messages.find(msg => msg.id === messageId)
+    const message = messages.find((msg) => msg.id === messageId)
     if (message) {
       setReplyToMessage(message)
     }
@@ -369,7 +462,7 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   const renderFileMessage = (message: any) => {
     const isFile = message.type === 'FILE' || message.content.startsWith('📎')
-    
+
     if (!isFile) return null
 
     const filename = message.content.replace('📎 ', '')
@@ -379,12 +472,8 @@ export default function ChatPage({ params }: ChatPageProps) {
       <div className="flex items-center gap-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
         <FileText className="w-6 h-6 text-gray-400" />
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
-            {filename}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Shared file
-          </p>
+          <p className="text-sm font-medium text-gray-900 dark:text-white">{filename}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Shared file</p>
         </div>
         {fileUrl && (
           <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
@@ -419,7 +508,7 @@ export default function ChatPage({ params }: ChatPageProps) {
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </button>
-              
+
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
                   {getChatAvatar() ? (
@@ -430,7 +519,7 @@ export default function ChatPage({ params }: ChatPageProps) {
                     </span>
                   )}
                 </div>
-                
+
                 <div>
                   <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {getChatDisplayName()}
@@ -439,14 +528,15 @@ export default function ChatPage({ params }: ChatPageProps) {
                     {isConnected ? 'Online' : 'Connecting...'}
                     {isTyping.length > 0 && (
                       <span className="text-green-600">
-                        {' • '}{isTyping.join(', ')} typing...
+                        {' • '}
+                        {isTyping.join(', ')} typing...
                       </span>
                     )}
                   </p>
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
                 <Phone className="w-5 h-5 text-gray-600 dark:text-gray-300" />
@@ -473,7 +563,7 @@ export default function ChatPage({ params }: ChatPageProps) {
             messages.map((message) => {
               const isOwn = message.senderId === user?.id
               const showAvatar = !isOwn
-              
+
               return (
                 <div
                   key={message.id}
@@ -486,14 +576,14 @@ export default function ChatPage({ params }: ChatPageProps) {
                       </span>
                     </div>
                   )}
-                  
+
                   <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-1' : ''} relative`}>
                     {!isOwn && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 px-3">
                         {message.sender.displayName}
                       </p>
                     )}
-                    
+
                     <div className="relative">
                       <div
                         className={`rounded-2xl px-4 py-2 ${
@@ -512,16 +602,18 @@ export default function ChatPage({ params }: ChatPageProps) {
                             )}
                           </p>
                         )}
-                        
+
                         <div className="flex items-center justify-between mt-1">
-                          <p className={`text-xs ${
-                            isOwn ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
-                          }`}>
+                          <p
+                            className={`text-xs ${
+                              isOwn ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
+                            }`}
+                          >
                             {dayjs(message.createdAt).fromNow()}
                           </p>
                         </div>
                       </div>
-                      
+
                       {/* Message Context Menu */}
                       <div className={`absolute top-2 ${isOwn ? 'left-2' : 'right-2'}`}>
                         <MessageContextMenu
@@ -555,13 +647,13 @@ export default function ChatPage({ params }: ChatPageProps) {
         {/* Message Input */}
         <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => setShowFileUpload(true)}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
             >
               <Paperclip className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
-            
+
             <div className="flex-1 relative">
               <Input
                 value={newMessage}
@@ -577,12 +669,12 @@ export default function ChatPage({ params }: ChatPageProps) {
                 placeholder="Type a message..."
                 className="pr-12 rounded-full"
               />
-              
+
               <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
                 <Smile className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </button>
             </div>
-            
+
             <Button
               onClick={handleSendMessage}
               disabled={!newMessage.trim() || !isConnected}

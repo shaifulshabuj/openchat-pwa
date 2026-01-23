@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/Toaster";
+import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 import "./globals.css";
 
 const inter = Inter({
@@ -50,7 +51,9 @@ export default function RootLayout({
         <meta name="msapplication-tap-highlight" content="no" />
       </head>
       <body className={`font-inter antialiased bg-gray-50 dark:bg-gray-900`}>
-        {children}
+        <AuthErrorBoundary>
+          {children}
+        </AuthErrorBoundary>
         <Toaster />
       </body>
     </html>

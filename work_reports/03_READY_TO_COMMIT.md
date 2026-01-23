@@ -9,16 +9,23 @@
 
 ## 🎯 **Summary of Changes**
 
-This commit adds **four major Phase 1 features** with full backend, database, and frontend implementation:
+This commit adds **four major Phase 1 features** with full backend, database, and frontend implementation, plus **critical bug fixes** for authentication and error handling:
 
 1. ✅ **Message Reactions** - Add/remove emoji reactions (7 emojis supported)
 2. ✅ **Message Edit** - Edit messages within 24 hours
 3. ✅ **Message Delete** - Soft delete messages (users + admins)
 4. ✅ **Read Receipts** - Track message delivery and read status
 
+**Bug Fixes:**
+
+- Fixed authentication race condition causing premature redirects
+- Fixed SSR crash in registration with localStorage
+- Fixed toast timing on registration success
+- Improved error message display in chat operations
+
 **Total Changes:**
 
-- 8 modified files
+- 12 modified files (8 features + 4 bug fixes)
 - 9 new files
 - 1 database migration
 - 11 API tests (100% pass rate)
@@ -72,9 +79,11 @@ This commit adds **four major Phase 1 features** with full backend, database, an
    - Adds MessageReaction and MessageStatus tables
    - Updates Message model
 
-⚠️ apps/api/prisma/dev.db (EXCLUDE FROM COMMIT)
+❌ apps/api/prisma/dev.db (DO NOT COMMIT)
    - Local development database
-   - Should be in .gitignore
+   - Already covered by .gitignore (*.db pattern)
+   - Binary file - should never be committed to version control
+   - Contains local test data only
 ```
 
 ---
@@ -89,6 +98,19 @@ This commit adds **four major Phase 1 features** with full backend, database, an
    - Integrated MessageContextMenu
    - Added message CRUD UI logic
    - Real-time event handling
+   - Improved error handling (extracts API error messages)
+
+✅ apps/web/src/app/page.tsx
+   - Fixed authentication race condition
+   - Added user === null check to prevent premature redirects
+
+✅ apps/web/src/app/auth/register/page.tsx
+   - Fixed toast timing (1000ms delay before redirect)
+   - Removed duplicate error feedback
+
+✅ apps/web/src/store/auth.ts
+   - Added SSR guard to register function
+   - Fixed localStorage access during server-side rendering
 
 ✅ apps/web/src/hooks/useSocket.ts
    - Added 'message-edited' event listener
@@ -146,28 +168,109 @@ This commit adds **four major Phase 1 features** with full backend, database, an
 
 ## 🚫 **Files to EXCLUDE from Commit**
 
+### **❌ Database Files (NEVER COMMIT)**
+
 ```bash
 ❌ apps/api/prisma/dev.db
-   Reason: Local development database (should be in .gitignore)
+   Reason: Local SQLite database with test data
+   Status: Already ignored by .gitignore (*.db pattern)
+   Action: NEVER commit database files to version control
 
-❌ LOCAL_TEST_REPORT.md (OPTIONAL)
-   Reason: Test documentation (can commit if desired for records)
+❌ apps/api/prisma/dev.db-journal
+   Reason: SQLite journal file
+   Status: Already ignored by .gitignore (*.db-journal pattern)
+```
 
-❌ PROJECT_STATUS.md (OPTIONAL)
-   Reason: Project tracking doc (can commit if desired)
+### **❌ Build Artifacts & Dependencies**
 
-❌ READY_TO_COMMIT.md (OPTIONAL)
-   Reason: Pre-commit checklist (temporary file)
+```bash
+❌ node_modules/
+   Status: Ignored by .gitignore
 
-❌ TESTING_GUIDE.md (OPTIONAL)
-   Reason: Testing documentation (commit if updated)
+❌ .next/
+   Status: Ignored by .gitignore
 
+❌ dist/
+   Status: Ignored by .gitignore
+
+❌ .turbo/
+   Status: Ignored by .gitignore
+```
+
+### **❌ Environment & Secrets**
+
+```bash
+❌ .env*.local
+   Reason: Contains secrets and API keys
+   Status: Ignored by .gitignore
+```
+
+### **❌ Temporary & Log Files**
+
+```bash
 ❌ /tmp/openchat-*.log
    Reason: Temporary log files
 
 ❌ /tmp/test-*.txt
    Reason: Temporary test data files
+
+❌ *.log
+   Status: Ignored by .gitignore
 ```
+
+### **📝 Documentation Files (OPTIONAL)**
+
+```bash
+⚠️ LOCAL_TEST_REPORT.md
+   Decision: Can commit if desired for project records
+
+⚠️ PROJECT_STATUS.md
+   Decision: Can commit if desired for tracking
+
+⚠️ work_reports/*.md
+   Decision: Can commit for team collaboration
+
+⚠️ TESTING_GUIDE.md
+   Decision: Commit if updated with new test procedures
+```
+
+---
+
+## 📋 **Git Ignore Verification**
+
+Before committing, verify your `.gitignore` includes:
+
+```gitignore
+# Database files (CRITICAL - prevents accidental commits)
+*.db
+*.db-journal
+
+# Dependencies
+node_modules
+
+# Build outputs
+.next
+.turbo
+dist
+
+# Logs
+*.log
+
+# Environment variables
+.env*.local
+
+# OS files
+.DS_Store
+
+# Test coverage
+coverage
+.nyc_output
+
+# TypeScript
+*.tsbuildinfo
+```
+
+✅ **Status:** `.gitignore` is properly configured and covers all sensitive files
 
 ---
 
@@ -215,7 +318,9 @@ This commit adds **four major Phase 1 features** with full backend, database, an
 - [x] All files reviewed for sensitive data
 - [x] Commit message drafted (see below)
 - [x] Branch is clean (no unrelated changes)
-- [ ] .gitignore includes dev.db (VERIFY BEFORE COMMIT)
+- [x] .gitignore verified (includes \*.db pattern - dev.db is excluded)
+- [x] No database files staged for commit
+- [x] Code review fixes applied (auth race condition, SSR guard, error handling)
 
 ---
 
@@ -233,6 +338,13 @@ New Features:
 - Message Edit: Users can edit their messages within 24 hours
 - Message Delete: Users can soft delete messages (admins can delete any message)
 - Read Receipts: Track message delivery and read status per user
+
+Bug Fixes:
+- Fixed authentication race condition on page load (added user === null check)
+- Fixed SSR crash in register function (added window check for localStorage)
+- Fixed toast not displaying before redirect (increased delay to 1000ms)
+- Improved error handling in chat operations (now displays actual API error messages)
+- Removed duplicate error feedback in registration form
 
 Backend Changes:
 - Added MessageReaction table with unique constraint [messageId, userId, emoji]
@@ -253,6 +365,9 @@ Frontend Changes:
 - Added Dialog, DropdownMenu, Textarea UI primitives (Radix UI)
 - Updated useSocket hook with new event listeners
 - Updated api.ts with 7 new API client functions
+- Fixed authentication redirect logic in page.tsx
+- Fixed SSR compatibility in auth store
+- Improved error message display across chat operations
 
 Database Migration:
 - Migration: 20260123084811_add_message_status
@@ -341,12 +456,21 @@ git commit -m "feat: Add message reactions, edit, delete, and read receipts (Pha
 
 ### **Before Committing**
 
-1. **EXCLUDE dev.db** - DO NOT commit the SQLite database file
+1. **✅ VERIFY Database Files Are Excluded**
 
    ```bash
-   # Verify .gitignore includes:
-   *.db
-   *.db-journal
+   # Check git status - dev.db should NOT appear
+   git status
+
+   # Verify .gitignore includes these patterns:
+   grep -E "^\*\.db$|^\*\.db-journal$" .gitignore
+
+   # Expected output:
+   # *.db
+   # *.db-journal
+
+   # If dev.db appears in git status, it means .gitignore is not working
+   # DO NOT PROCEED - investigate why .gitignore is not being respected
    ```
 
 2. **Run Migration on Production** - After deploying this commit, run:
@@ -361,11 +485,25 @@ git commit -m "feat: Add message reactions, edit, delete, and read receipts (Pha
    - [ ] Can delete a message
    - [ ] Can add/remove reactions
    - [ ] Real-time updates work via Socket.io
+   - [ ] Authentication redirect works correctly
+   - [ ] Registration shows success toast before redirect
+   - [ ] Error messages display actual API errors
 
 4. **Check for Conflicts** - Ensure no merge conflicts exist:
+
    ```bash
    git pull origin main
    git status
+   ```
+
+5. **Final Safety Check** - Before committing:
+
+   ```bash
+   # List all files that will be committed
+   git diff --cached --name-only
+
+   # Ensure dev.db is NOT in this list
+   # If you see "apps/api/prisma/dev.db" - DO NOT COMMIT
    ```
 
 ---

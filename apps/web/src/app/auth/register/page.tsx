@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuthStore } from '@/store/auth'
+import { useToast } from '@/hooks/use-toast'
 import { MessageSquare, Eye, EyeOff } from 'lucide-react'
 
 export default function RegisterPage() {
@@ -21,6 +22,7 @@ export default function RegisterPage() {
   const [formError, setFormError] = useState('')
 
   const { register, isLoading, error, clearError } = useAuthStore()
+  const { toast } = useToast()
   const router = useRouter()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,12 +76,20 @@ export default function RegisterPage() {
     try {
       const { email, username, displayName, password } = formData
       await register({ email, username, displayName, password })
-      // Wait a moment for auth state to update, then redirect
+
+      toast({
+        title: 'Account created!',
+        description: 'Welcome to OpenChat! You have been successfully registered.',
+        variant: 'success',
+      })
+
+      // Wait for toast to be visible before redirecting
       setTimeout(() => {
         router.push('/') // Redirect to main app
-      }, 100)
+      }, 1000)
     } catch (err) {
-      // Error is handled by the store
+      // Error is already handled by the store and displayed inline
+      console.error('Registration error:', err)
     }
   }
 
