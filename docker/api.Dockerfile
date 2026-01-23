@@ -12,8 +12,8 @@ RUN npm install
 # Copy source code
 COPY apps/api ./
 
-# Generate Prisma client
-RUN npm run db:generate
+# Generate Prisma client with correct version
+RUN npx prisma@5.8.1 generate
 
 # Build the application
 RUN npm run build
