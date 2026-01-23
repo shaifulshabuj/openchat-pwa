@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
-# Install OpenSSL and curl for Prisma and health checks
-RUN apk add --no-cache openssl openssl-dev curl
+# Install OpenSSL, curl, and required libraries for Prisma
+RUN apk add --no-cache openssl openssl-dev curl libc6-compat
 
 WORKDIR /app
 
@@ -15,12 +15,11 @@ RUN npm install
 # Copy source code
 COPY apps/api ./
 
-# Set Prisma to use correct OpenSSL for Alpine
-ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/node_modules/@prisma/engines/libquery_engine-linux-musl-openssl-3.0.x.so.node
-ENV PRISMA_QUERY_ENGINE_BINARY=/app/node_modules/@prisma/engines/query-engine-linux-musl-openssl-3.0.x
-ENV OPENSSL_CONF=""
+# Let Prisma auto-detect the correct engines for Alpine Linux
+# This ensures compatibility with linux-musl architecture
+ENV PRISMA_CLI_BINARY_TARGETS="linux-musl-openssl-3.0.x"
 
-# Generate Prisma client with correct version
+# Generate Prisma client with correct version for Alpine
 RUN npx prisma@5.8.1 generate
 
 # Build the application
