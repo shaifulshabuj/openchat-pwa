@@ -1,8 +1,8 @@
 FROM node:20-alpine
 
 # Install OpenSSL 3.x, curl, and required libraries for Prisma
-# Use specific OpenSSL package that Prisma recognizes
-RUN apk add --no-cache openssl=3.1.4-r5 openssl-dev curl libc6-compat
+# Let Alpine install the latest compatible OpenSSL version
+RUN apk add --no-cache openssl openssl-dev curl libc6-compat
 
 WORKDIR /app
 
@@ -17,8 +17,8 @@ RUN npm install
 COPY apps/api ./
 
 # Set environment variables for Prisma client generation
-# Force Prisma to use the correct OpenSSL version for Alpine Linux 3.18
-ENV PRISMA_CLI_BINARY_TARGETS="linux-musl-openssl-3.0.x,native"
+# Support both OpenSSL 3.0.x and 3.1.x for broader compatibility
+ENV PRISMA_CLI_BINARY_TARGETS="linux-musl-openssl-3.0.x,linux-musl-openssl-3.1.x,native"
 ENV PRISMA_ENGINE_TYPE="binary"
 ENV OPENSSL_ROOT_DIR="/usr"
 ENV OPENSSL_LIBRARIES="/usr/lib"
