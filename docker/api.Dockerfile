@@ -16,13 +16,11 @@ RUN npm install
 # Copy source code
 COPY apps/api ./
 
-# Set environment variables for Prisma client generation
-# Use only linux-musl target for Alpine Linux Docker
-ENV PRISMA_CLI_BINARY_TARGETS="linux-musl"
+# Set environment variables for Prisma
 ENV PRISMA_ENGINE_TYPE="binary"
 
-# Generate Prisma client with explicit OpenSSL 3.0 target
-RUN npx prisma generate
+# Generate Prisma client for Alpine Linux
+RUN PRISMA_CLI_BINARY_TARGETS="linux-musl" npx prisma generate
 
 # Build the application
 RUN npm run build
