@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   // Dynamic routes need generateStaticParams() for static export
   output: process.env.STATIC_EXPORT === 'true' ? 'export' : undefined,
   trailingSlash: process.env.STATIC_EXPORT === 'true',
+  basePath: process.env.STATIC_EXPORT === 'true' ? '/openchat-pwa' : '',
+  assetPrefix: process.env.STATIC_EXPORT === 'true' ? '/openchat-pwa' : '',
   images: {
     unoptimized: true,
   },
