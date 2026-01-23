@@ -17,11 +17,9 @@ RUN npm install
 COPY apps/api ./
 
 # Set environment variables for Prisma client generation
-# Support both OpenSSL 3.0.x and 3.1.x for broader compatibility
-ENV PRISMA_CLI_BINARY_TARGETS="linux-musl-openssl-3.0.x,linux-musl-openssl-3.1.x,native"
+# Use standard linux-musl target for Alpine Linux
+ENV PRISMA_CLI_BINARY_TARGETS="linux-musl,native"
 ENV PRISMA_ENGINE_TYPE="binary"
-ENV OPENSSL_ROOT_DIR="/usr"
-ENV OPENSSL_LIBRARIES="/usr/lib"
 
 # Generate Prisma client with explicit OpenSSL 3.0 target
 RUN npx prisma generate
