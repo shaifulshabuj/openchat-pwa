@@ -66,8 +66,8 @@ export const setupSocketIO = async (io: Server) => {
       }
 
       // Attach user info to socket
-      ;(socket as any).userId = payload.userId
-      ;(socket as any).username = payload.username
+      (socket as any).userId = payload.userId;
+      (socket as any).username = payload.username;
       
       next()
     } catch (error) {
