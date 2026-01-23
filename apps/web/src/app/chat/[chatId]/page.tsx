@@ -10,6 +10,10 @@ import { useSocket } from '@/hooks/useSocket'
 import { chatAPI, type Chat, type Message } from '@/lib/api'
 import { FileUpload } from '@/components/FileUpload'
 import { MessageReactions } from '@/components/MessageReactions'
+import { MessageContextMenu } from '@/components/MessageContextMenu'
+import { EditMessageDialog } from '@/components/EditMessageDialog'
+import { MessageReadIndicator, type ReadStatus } from '@/components/MessageReadIndicator'
+import { reactionsAPI, messageStatusAPI } from '@/lib/api'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 
@@ -27,6 +31,11 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isTyping, setIsTyping] = useState<string[]>([])
   const [showFileUpload, setShowFileUpload] = useState(false)
+  const [editingMessage, setEditingMessage] = useState<{ id: string; content: string } | null>(null)
+  const [isEditLoading, setIsEditLoading] = useState(false)
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null)
+  const [messageReadStatus, setMessageReadStatus] = useState<Record<string, ReadStatus>>({})
+  const [unreadMessages, setUnreadMessages] = useState<Set<string>>(new Set())
   
   const { user } = useAuthStore()
   const { isConnected, on, off, joinChat, sendMessage, startTyping, stopTyping } = useSocket()
@@ -92,10 +101,88 @@ export default function ChatPage({ params }: ChatPageProps) {
         }
       })
 
+      // Listen for message edits
+      on('message-edited', ({ message }: { message: any }) => {
+        if (message.chatId === chatId) {
+          setMessages(prev => prev.map(msg => 
+            msg.id === message.id 
+              ? { ...msg, content: message.content, isEdited: true, updatedAt: message.updatedAt }
+              : msg
+          ))
+        }
+      })
+
+      // Listen for message deletions
+      on('message-deleted', ({ messageId, chatId: eventChatId }: { messageId: string; chatId: string; deletedBy: string }) => {
+        if (eventChatId === chatId) {
+          setMessages(prev => prev.map(msg => 
+            msg.id === messageId 
+              ? { ...msg, content: '[Message deleted]', isDeleted: true }
+              : msg
+          ))
+        }
+      })
+
+      // Listen for reaction updates
+      on('reaction-added', ({ messageId, reaction }: { messageId: string; reaction: any }) => {
+        setMessages(prev => prev.map(msg => {
+          if (msg.id === messageId) {
+            const reactions = (msg as any).reactions || []
+            const existingReaction = reactions.find((r: any) => r.emoji === reaction.emoji)
+            
+            if (existingReaction) {
+              existingReaction.count += 1
+              existingReaction.users.push({
+                id: reaction.user.id,
+                displayName: reaction.user.displayName
+              })
+            } else {
+              reactions.push({
+                emoji: reaction.emoji,
+                count: 1,
+                users: [{
+                  id: reaction.user.id,
+                  displayName: reaction.user.displayName
+                }],
+                hasReacted: reaction.user.id === user?.id
+              })
+            }
+            
+            return { ...msg, reactions }
+          }
+          return msg
+        }))
+      })
+
+      on('reaction-removed', ({ messageId, userId, emoji }: { messageId: string; userId: string; emoji: string }) => {
+        setMessages(prev => prev.map(msg => {
+          if (msg.id === messageId) {
+            const reactions = ((msg as any).reactions || []).map((r: any) => {
+              if (r.emoji === emoji) {
+                return {
+                  ...r,
+                  count: r.count - 1,
+                  users: r.users.filter((u: any) => u.id !== userId),
+                  hasReacted: userId === user?.id ? false : r.hasReacted
+                }
+              }
+              return r
+            }).filter((r: any) => r.count > 0)
+            
+            return { ...msg, reactions }
+          }
+          return msg
+        }))
+      })
+
       return () => {
         off('new-message')
         off('user-typing')
         off('user-stopped-typing')
+        off('message-edited')
+        off('message-deleted')
+        off('reaction-added')
+        off('reaction-removed')
       }
     }
   }, [isConnected, chatId, joinChat, on, off, user?.id])
@@ -163,25 +250,35 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   const handleAddReaction = async (messageId: string, emoji: string) => {
     try {
-      // Add reaction via API
-      // await chatAPI.addReaction(messageId, emoji)
+      const result = await reactionsAPI.addReaction(messageId, emoji)
       
-      // For demo purposes, add locally
+      // Update local state optimistically
       setMessages(prev => prev.map((msg: any) => {
         if (msg.id === messageId) {
           const reactions = msg.reactions || []
           const existingReaction = reactions.find((r: any) => r.emoji === emoji)
           
-          if (existingReaction) {
-            existingReaction.count += 1
-            existingReaction.hasReacted = true
-          } else {
-            reactions.push({
-              emoji,
-              count: 1,
-              users: [{ id: user!.id, displayName: user!.displayName }],
-              hasReacted: true
-            })
+          if (result.action === 'added') {
+            if (existingReaction) {
+              existingReaction.count += 1
+              existingReaction.hasReacted = true
+            } else {
+              reactions.push({
+                emoji,
+                count: 1,
+                users: [{ id: user!.id, displayName: user!.displayName }],
+                hasReacted: true
+              })
+            }
+          } else if (result.action === 'removed') {
+            if (existingReaction) {
+              existingReaction.count -= 1
+              existingReaction.hasReacted = false
+              if (existingReaction.count <= 0) {
+                const index = reactions.indexOf(existingReaction)
+                reactions.splice(index, 1)
+              }
+            }
           }
           
           return { ...msg, reactions }
@@ -195,10 +292,9 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   const handleRemoveReaction = async (messageId: string, emoji: string) => {
     try {
-      // Remove reaction via API
-      // await chatAPI.removeReaction(messageId, emoji)
+      await reactionsAPI.removeReaction(messageId, emoji)
       
-      // For demo purposes, remove locally
+      // Update local state optimistically
       setMessages(prev => prev.map((msg: any) => {
         if (msg.id === messageId) {
           const reactions = msg.reactions?.map((r: any) => {
@@ -218,6 +314,56 @@ export default function ChatPage({ params }: ChatPageProps) {
       }))
     } catch (error) {
       console.error('Error removing reaction:', error)
+    }
+  }
+
+  const handleEditMessage = (messageId: string, content: string) => {
+    setEditingMessage({ id: messageId, content })
+  }
+
+  const handleSaveEdit = async (messageId: string, content: string) => {
+    if (!chatId) return
+    
+    setIsEditLoading(true)
+    try {
+      const result = await chatAPI.editMessage(chatId, messageId, { content })
+      
+      // Update local state
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, content, isEdited: true, updatedAt: new Date().toISOString() }
+          : msg
+      ))
+      
+      setEditingMessage(null)
+    } catch (error) {
+      console.error('Error editing message:', error)
+    } finally {
+      setIsEditLoading(false)
+    }
+  }
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!chatId) return
+    
+    try {
+      await chatAPI.deleteMessage(chatId, messageId)
+      
+      // Update local state
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, content: '[Message deleted]', isDeleted: true }
+          : msg
+      ))
+    } catch (error) {
+      console.error('Error deleting message:', error)
+    }
+  }
+
+  const handleReplyToMessage = (messageId: string) => {
+    const message = messages.find(msg => msg.id === messageId)
+    if (message) {
+      setReplyToMessage(message)
     }
   }
 
@@ -331,7 +477,7 @@ export default function ChatPage({ params }: ChatPageProps) {
               return (
                 <div
                   key={message.id}
-                  className={`flex ${isOwn ? 'justify-end' : 'justify-start'} gap-2`}
+                  className={`flex ${isOwn ? 'justify-end' : 'justify-start'} gap-2 group`}
                 >
                   {showAvatar && (
                     <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
@@ -341,32 +487,54 @@ export default function ChatPage({ params }: ChatPageProps) {
                     </div>
                   )}
                   
-                  <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-1' : ''}`}>
+                  <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-1' : ''} relative`}>
                     {!isOwn && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 px-3">
                         {message.sender.displayName}
                       </p>
                     )}
                     
-                    <div
-                      className={`rounded-2xl px-4 py-2 ${
-                        isOwn
-                          ? 'bg-green-500 text-white rounded-br-sm'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-sm'
-                      }`}
-                    >
-                      {message.type === 'FILE' || message.content.startsWith('📎') ? (
-                        renderFileMessage(message)
-                      ) : (
-                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      )}
+                    <div className="relative">
+                      <div
+                        className={`rounded-2xl px-4 py-2 ${
+                          isOwn
+                            ? 'bg-green-500 text-white rounded-br-sm'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-sm'
+                        }`}
+                      >
+                        {message.type === 'FILE' || message.content.startsWith('📎') ? (
+                          renderFileMessage(message)
+                        ) : (
+                          <p className="text-sm whitespace-pre-wrap">
+                            {message.content}
+                            {message.isEdited && (
+                              <span className="text-xs opacity-70 ml-2">(edited)</span>
+                            )}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center justify-between mt-1">
+                          <p className={`text-xs ${
+                            isOwn ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
+                          }`}>
+                            {dayjs(message.createdAt).fromNow()}
+                          </p>
+                        </div>
+                      </div>
                       
-                      <div className="flex items-center justify-between mt-1">
-                        <p className={`text-xs ${
-                          isOwn ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
-                        }`}>
-                          {dayjs(message.createdAt).fromNow()}
-                        </p>
+                      {/* Message Context Menu */}
+                      <div className={`absolute top-2 ${isOwn ? 'left-2' : 'right-2'}`}>
+                        <MessageContextMenu
+                          messageId={message.id}
+                          chatId={chatId}
+                          content={message.content}
+                          isOwn={isOwn}
+                          isEdited={message.isEdited}
+                          createdAt={message.createdAt}
+                          onEdit={handleEditMessage}
+                          onDelete={handleDeleteMessage}
+                          onReply={handleReplyToMessage}
+                        />
                       </div>
                     </div>
 
@@ -432,6 +600,16 @@ export default function ChatPage({ params }: ChatPageProps) {
             />
           )}
         </footer>
+
+        {/* Edit Message Dialog */}
+        <EditMessageDialog
+          isOpen={!!editingMessage}
+          messageId={editingMessage?.id || ''}
+          initialContent={editingMessage?.content || ''}
+          isLoading={isEditLoading}
+          onClose={() => setEditingMessage(null)}
+          onSave={handleSaveEdit}
+        />
       </div>
     </div>
   )

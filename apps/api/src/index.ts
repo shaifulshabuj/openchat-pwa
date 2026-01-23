@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js'
 import chatRoutes from './routes/chats.js'
 import uploadRoutes from './routes/upload.js'
 import reactionRoutes from './routes/reactions.js'
+import messageStatusRoutes from './routes/messageStatus.js'
 import docsRoutes from './routes/docs.js'
 import securityPlugin from './middleware/security.js'
 import { rateLimitPlugin } from './middleware/rateLimit.js'
@@ -81,6 +82,7 @@ export const build = async () => {
   app.register(chatRoutes, { prefix: '/api/chats' })
   app.register(uploadRoutes, { prefix: '/api/upload' })
   app.register(reactionRoutes, { prefix: '/api/reactions' })
+  app.register(messageStatusRoutes, { prefix: '/api/message-status' })
   app.register(docsRoutes)
 
   // Users search endpoint

@@ -28,6 +28,7 @@ model User {
   chatParticipants ChatParticipant[]
   chatAdmins       ChatAdmin[]
   messageReactions MessageReaction[]
+  messageStatuses  MessageStatus[]
 
   @@map("users")
 }
@@ -100,6 +101,7 @@ model Message {
   replyTo   Message? @relation("MessageReply", fields: [replyToId], references: [id])
   replies   Message[] @relation("MessageReply")
   reactions MessageReaction[]
+  statuses  MessageStatus[]
 
   @@map("messages")
 }
@@ -117,4 +119,19 @@ model MessageReaction {
 
   @@unique([messageId, userId, emoji])
   @@map("message_reactions")
+}
+
+model MessageStatus {
+  id          String   @id @default(cuid())
+  messageId   String
+  userId      String   // Who has read the message
+  deliveredAt DateTime @default(now())
+  readAt      DateTime?
+  
+  // Relations
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([messageId, userId])
+  @@map("message_status")
 }

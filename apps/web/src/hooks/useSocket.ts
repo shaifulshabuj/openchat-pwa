@@ -9,6 +9,11 @@ export interface SocketEvents {
   'user-status-changed': (data: { userId: string; username: string; status: string; lastSeen: Date }) => void
   'joined-chat': (data: { chatId: string }) => void
   'left-chat': (data: { chatId: string }) => void
+  'message-edited': (data: { message: any; chatId: string }) => void
+  'message-deleted': (data: { messageId: string; chatId: string; deletedBy: string }) => void
+  'reaction-added': (data: { messageId: string; reaction: any }) => void
+  'reaction-removed': (data: { messageId: string; userId: string; emoji: string; reactionId: string }) => void
+  'messages-read': (data: { userId: string; messageIds: string[]; readAt: string; chatId: string }) => void
   'error': (data: { message: string }) => void
 }
 

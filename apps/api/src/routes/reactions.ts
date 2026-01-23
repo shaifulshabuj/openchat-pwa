@@ -17,7 +17,7 @@ export default async function reactionRoutes(fastify: FastifyInstance) {
   }, async (request: any, reply) => {
     try {
       const { messageId, emoji } = addReactionSchema.parse(request.body)
-      const userId = request.user.userId
+      const userId = request.auth.userId
 
       // Validate that the message exists and user has access
       const message = await prisma.message.findFirst({
@@ -128,7 +128,7 @@ export default async function reactionRoutes(fastify: FastifyInstance) {
   }, async (request: any, reply) => {
     try {
       const { messageId } = request.params
-      const userId = request.user.userId
+      const userId = request.auth.userId
 
       // Validate that the message exists and user has access
       const message = await prisma.message.findFirst({
@@ -209,7 +209,7 @@ export default async function reactionRoutes(fastify: FastifyInstance) {
   }, async (request: any, reply) => {
     try {
       const { messageId, emoji } = addReactionSchema.parse(request.body)
-      const userId = request.user.userId
+      const userId = request.auth.userId
 
       // Find and remove the reaction
       const reaction = await prisma.messageReaction.findUnique({

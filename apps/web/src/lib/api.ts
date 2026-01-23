@@ -194,6 +194,83 @@ export const chatAPI = {
     const response = await api.post(`/api/chats/${chatId}/leave`)
     return response.data
   },
+
+  async editMessage(chatId: string, messageId: string, data: {
+    content: string
+  }): Promise<{ success: boolean; data: Message }> {
+    const response = await api.put(`/api/chats/${chatId}/messages/${messageId}`, data)
+    return response.data
+  },
+
+  async deleteMessage(chatId: string, messageId: string): Promise<{ success: boolean }> {
+    const response = await api.delete(`/api/chats/${chatId}/messages/${messageId}`)
+    return response.data
+  },
+}
+
+// Reactions API functions
+export const reactionsAPI = {
+  async addReaction(messageId: string, emoji: string): Promise<{ 
+    success: boolean; 
+    action: 'added' | 'removed';
+    reaction: any 
+  }> {
+    const response = await api.post('/api/reactions/add', { messageId, emoji })
+    return response.data
+  },
+
+  async removeReaction(messageId: string, emoji: string): Promise<{ success: boolean }> {
+    const response = await api.delete('/api/reactions/remove', { 
+      data: { messageId, emoji }
+    })
+    return response.data
+  },
+
+  async getMessageReactions(messageId: string): Promise<{ 
+    success: boolean; 
+    data: {
+      messageId: string;
+      reactions: Array<{
+        emoji: string;
+        count: number;
+        users: Array<{ id: string; username: string; displayName: string; avatar?: string }>;
+      }>;
+      totalReactions: number;
+    }
+  }> {
+    const response = await api.get(`/api/reactions/${messageId}`)
+    return response.data
+  },
+}
+
+// Message Status API functions
+export const messageStatusAPI = {
+  async markAsRead(messageIds: string[]): Promise<{
+    success: boolean;
+    message: string;
+    markedCount: number;
+    readStatuses: Array<{ messageId: string; readAt: string }>;
+  }> {
+    const response = await api.post('/api/message-status/mark-read', { messageIds })
+    return response.data
+  },
+
+  async getReadBy(messageId: string): Promise<{
+    success: boolean;
+    data: {
+      messageId: string;
+      readBy: Array<{
+        user: { id: string; username: string; displayName: string; avatar?: string };
+        readAt: string;
+      }>;
+      readCount: number;
+      totalParticipants: number;
+      allRead: boolean;
+    };
+  }> {
+    const response = await api.get(`/api/message-status/${messageId}/read-by`)
+    return response.data
+  },
 }
 
 // Users API functions

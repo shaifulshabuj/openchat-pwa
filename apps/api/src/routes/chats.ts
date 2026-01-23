@@ -253,7 +253,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       const participation = await prisma.chatParticipant.findUnique({
         where: {
           userId_chatId: {
-            userId: request.user!.userId,
+            userId: request.auth.userId,
             chatId
           }
         }
@@ -322,7 +322,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       const participation = await prisma.chatParticipant.findUnique({
         where: {
           userId_chatId: {
-            userId: request.user!.userId,
+            userId: request.auth.userId,
             chatId
           }
         }
@@ -351,7 +351,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       const messageCreateData: any = {
         content: messageData.content,
         type: messageData.type,
-        senderId: request.user!.userId,
+        senderId: request.auth.userId,
         chatId,
       }
       
@@ -434,7 +434,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       const existingParticipation = await prisma.chatParticipant.findUnique({
         where: {
           userId_chatId: {
-            userId: request.user!.userId,
+            userId: request.auth.userId,
             chatId
           }
         }
@@ -453,7 +453,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       } else {
         await prisma.chatParticipant.create({
           data: {
-            userId: request.user!.userId,
+            userId: request.auth.userId,
             chatId
           }
         })
@@ -477,7 +477,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       const participation = await prisma.chatParticipant.findUnique({
         where: {
           userId_chatId: {
-            userId: request.user!.userId,
+            userId: request.auth.userId,
             chatId
           }
         }
@@ -512,7 +512,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         content: z.string().min(1).max(1000) 
       }).parse(request.body)
       
-      const userId = request.user.userId
+      const userId = request.auth.userId
 
       // Find the message and verify ownership
       const message = await prisma.message.findFirst({
@@ -593,7 +593,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
   }, async (request: any, reply) => {
     try {
       const { chatId, messageId } = request.params
-      const userId = request.user.userId
+      const userId = request.auth.userId
 
       // Find the message and verify ownership or admin rights
       const message = await prisma.message.findFirst({
