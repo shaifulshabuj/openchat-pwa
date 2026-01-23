@@ -12,3 +12,4 @@ coverage
 # Database files
 *.db
 *.db-journal
+.terminal
