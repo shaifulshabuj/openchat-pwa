@@ -11,7 +11,8 @@
     "lint": "eslint src --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
     "db:generate": "prisma generate",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "postinstall": "if [ -f prisma/schema.prisma ]; then prisma generate; fi"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
