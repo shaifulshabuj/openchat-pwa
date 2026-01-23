@@ -11,15 +11,15 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "OpenChat PWA",
   description: "Open-Source, Cross-Platform Progressive Web App for Modern Social Communication",
-  manifest: "/manifest.json",
+  manifest: `${process.env.STATIC_EXPORT === 'true' ? '/openchat-pwa' : ''}/manifest.json`,
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "OpenChat PWA",
   },
   icons: {
-    apple: "/icons/icon-192x192.png",
-    icon: "/icons/icon-192x192.png",
+    apple: `${process.env.STATIC_EXPORT === 'true' ? '/openchat-pwa' : ''}/icons/icon-192x192.png`,
+    icon: `${process.env.STATIC_EXPORT === 'true' ? '/openchat-pwa' : ''}/icons/icon-192x192.png`,
   },
 };
 
@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href={`${process.env.STATIC_EXPORT === 'true' ? '/openchat-pwa' : ''}/manifest.json`} />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
