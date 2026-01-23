@@ -7,8 +7,7 @@ RUN apk add --no-cache openssl openssl-dev curl libc6-compat
 WORKDIR /app
 
 # Copy package files
-COPY apps/api/package.json ./
-COPY package.json ./package.json
+COPY apps/api/package.json ./package.json
 
 # Install dependencies
 RUN npm install
