@@ -16,11 +16,11 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 dayjs.extend(relativeTime)
 
 interface ChatPageProps {
-  params: { chatId: string }
+  params: Promise<{ chatId: string }>
 }
 
 export default function ChatPage({ params }: ChatPageProps) {
-  const { chatId } = params
+  const [chatId, setChatId] = useState<string>('')
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [chat, setChat] = useState<Chat | null>(null)
@@ -32,8 +32,17 @@ export default function ChatPage({ params }: ChatPageProps) {
   const { isConnected, on, off, joinChat, sendMessage, startTyping, stopTyping } = useSocket()
   const router = useRouter()
 
+  // Extract chatId from async params
+  useEffect(() => {
+    params.then(resolvedParams => {
+      setChatId(resolvedParams.chatId)
+    })
+  }, [params])
+
   // Load chat details and messages
   useEffect(() => {
+    if (!chatId) return
+    
     const loadChatData = async () => {
       try {
         const [chatResponse, messagesResponse] = await Promise.all([

@@ -80,22 +80,56 @@ jobs:
           path: ./apps/web/.next
           retention-days: 1
 
-  # TODO: Setup proper frontend deployment (Vercel/Netlify)
-  # deploy-frontend:
-  #   name: Deploy Frontend to GitHub Pages
-  #   runs-on: ubuntu-latest
-  #   needs: build-frontend
-  #   if: github.ref == 'refs/heads/main'
-  #   permissions:
-  #     pages: write
-  #     id-token: write
-  #   environment:
-  #     name: github-pages
-  #     url: ${{ steps.deployment.outputs.page_url }}
-  #   steps:
-  #     - name: Deploy to GitHub Pages
-  #       id: deployment
-  #       uses: actions/deploy-pages@v4
+  deploy-frontend:
+    name: Deploy Frontend to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
+      contents: read
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend for static export
+        env:
+          NEXT_PUBLIC_API_URL: https://openchat-pwa-production.up.railway.app
+          NEXT_PUBLIC_SOCKET_URL: https://openchat-pwa-production.up.railway.app
+          STATIC_EXPORT: 'true'
+        run: pnpm build --filter=openchat-web
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        with:
+          static_site_generator: next
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./apps/web/out
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   deploy-backend:
     name: Deploy Backend to Railway

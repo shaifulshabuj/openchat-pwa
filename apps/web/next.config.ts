@@ -1,9 +1,10 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Using standard build for dynamic routes, not static export
-  // output: 'export',
-  // trailingSlash: true,
+  // Conditionally enable static export for GitHub Pages deployment
+  // Dynamic routes need generateStaticParams() for static export
+  output: process.env.STATIC_EXPORT === 'true' ? 'export' : undefined,
+  trailingSlash: process.env.STATIC_EXPORT === 'true',
   images: {
     unoptimized: true,
   },
