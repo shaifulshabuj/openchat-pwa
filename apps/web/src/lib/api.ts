@@ -28,14 +28,22 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.log('API Error:', error.response?.status, error.response?.statusText, error.config?.url)
+    
     if (error.response?.status === 401) {
-      // Clear invalid token
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('user_data')
+      // Only redirect on specific auth endpoints, not all 401s
+      const isAuthEndpoint = error.config?.url?.includes('/auth/')
       
-      // Redirect to login (you can customize this)
-      if (typeof window !== 'undefined') {
-        window.location.href = '/auth/login'
+      if (isAuthEndpoint || error.response?.data?.error === 'Invalid token') {
+        // Clear invalid token
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('user_data')
+        
+        // Only redirect if we're not already on the login page
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+          console.log('Token invalid, redirecting to login')
+          window.location.href = '/auth/login'
+        }
       }
     }
     return Promise.reject(error)

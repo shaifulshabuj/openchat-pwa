@@ -183,6 +183,12 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           return
         }
 
+        // Skip check if already authenticated and not expired
+        const state = get()
+        if (state.isAuthenticated && state.user && state.token === token) {
+          return
+        }
+
         set({ isLoading: true })
         
         try {
@@ -200,6 +206,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             throw new Error('Invalid token')
           }
         } catch (error) {
+          console.log('Auth check failed:', error)
           // Token is invalid, clear it
           localStorage.removeItem('auth_token')
           localStorage.removeItem('user_data')
