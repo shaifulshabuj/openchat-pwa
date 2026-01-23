@@ -62,6 +62,15 @@ export const build = async () => {
     }
   })
 
+  // Root path for Railway health checks
+  app.get('/', async () => {
+    return { 
+      message: 'OpenChat API is running', 
+      status: 'healthy',
+      version: '1.0.0'
+    }
+  })
+
   // API routes
   app.get('/api/hello', async () => {
     return { message: 'Hello from OpenChat API!', version: '1.0.0' }
