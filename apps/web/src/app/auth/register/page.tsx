@@ -15,18 +15,18 @@ export default function RegisterPage() {
     username: '',
     displayName: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   })
   const [showPassword, setShowPassword] = useState(false)
   const [formError, setFormError] = useState('')
-  
+
   const { register, isLoading, error, clearError } = useAuthStore()
   const router = useRouter()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }))
   }
 
@@ -74,7 +74,10 @@ export default function RegisterPage() {
     try {
       const { email, username, displayName, password } = formData
       await register({ email, username, displayName, password })
-      router.push('/') // Redirect to main app
+      // Wait a moment for auth state to update, then redirect
+      setTimeout(() => {
+        router.push('/') // Redirect to main app
+      }, 100)
     } catch (err) {
       // Error is handled by the store
     }
@@ -89,12 +92,8 @@ export default function RegisterPage() {
               <MessageSquare className="w-8 h-8 text-green-600" />
             </div>
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Join OpenChat and start messaging
-          </p>
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">Create your account</h2>
+          <p className="mt-2 text-sm text-gray-600">Join OpenChat and start messaging</p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -200,11 +199,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Creating account...' : 'Create account'}
             </Button>
           </div>
@@ -212,10 +207,7 @@ export default function RegisterPage() {
           <div className="text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
-              <Link
-                href="/auth/login"
-                className="font-medium text-green-600 hover:text-green-500"
-              >
+              <Link href="/auth/login" className="font-medium text-green-600 hover:text-green-500">
                 Sign in
               </Link>
             </p>

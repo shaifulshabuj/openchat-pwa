@@ -19,17 +19,20 @@ dotenv.config()
 
 export const build = async () => {
   const app = fastify({
-    logger: true
+    logger: true,
   })
 
   // Security middleware and rate limiting
   app.register(securityPlugin)
   app.register(rateLimitPlugin)
 
-  // Setup CORS
+  // Setup CORS - Allow multiple origins from environment variable
+  const allowedOrigins = (
+    process.env.ALLOWED_ORIGINS || 'http://localhost:3001,http://localhost:3000'
+  ).split(',')
   app.register(cors, {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
-    credentials: true
+    origin: allowedOrigins,
+    credentials: true,
   })
 
   // Security headers
@@ -40,9 +43,9 @@ export const build = async () => {
   if (process.env.NODE_ENV === 'production' && jwtSecret === 'fallback-secret-key') {
     throw new Error('JWT_SECRET must be set in production environment')
   }
-  
+
   app.register(jwt, {
-    secret: jwtSecret
+    secret: jwtSecret,
   })
 
   // File upload support
@@ -50,12 +53,12 @@ export const build = async () => {
 
   // Health check route with more details
   app.get('/health', async () => {
-    return { 
-      status: 'ok', 
+    return {
+      status: 'ok',
       timestamp: new Date().toISOString(),
       version: '1.0.0',
       environment: process.env.NODE_ENV || 'development',
-      uptime: process.uptime()
+      uptime: process.uptime(),
     }
   })
 
@@ -75,7 +78,7 @@ export const build = async () => {
   app.get('/api/users/search', async (request: any, reply) => {
     try {
       const { q } = request.query
-      
+
       if (!q || q.length < 2) {
         return reply.status(400).send({ error: 'Query must be at least 2 characters' })
       }
@@ -84,22 +87,22 @@ export const build = async () => {
         where: {
           OR: [
             { username: { contains: q, mode: 'insensitive' } },
-            { displayName: { contains: q, mode: 'insensitive' } }
-          ]
+            { displayName: { contains: q, mode: 'insensitive' } },
+          ],
         },
         select: {
           id: true,
           username: true,
           displayName: true,
           avatar: true,
-          status: true
+          status: true,
         },
-        take: 10
+        take: 10,
       })
 
       return reply.send({
         success: true,
-        data: users
+        data: users,
       })
     } catch (error) {
       app.log.error(error)
@@ -107,13 +110,13 @@ export const build = async () => {
     }
   })
 
-  // Socket.io setup
+  // Socket.io setup - Use same CORS origins as HTTP routes
   const io = new Server(app.server, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:3001',
-      methods: ["GET", "POST"],
-      credentials: true
-    }
+      origin: allowedOrigins,
+      methods: ['GET', 'POST'],
+      credentials: true,
+    },
   })
 
   // Setup Socket.io with authentication and real-time features

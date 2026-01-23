@@ -47,7 +47,7 @@ class RateLimiter {
     const windowStart = now - this.options.windowMs
 
     let requestInfo = this.requests.get(key)
-    
+
     if (!requestInfo || requestInfo.resetTime <= now) {
       requestInfo = {
         count: 0,
@@ -60,7 +60,10 @@ class RateLimiter {
 
     if (this.options.headers) {
       reply.header('X-RateLimit-Limit', this.options.maxRequests)
-      reply.header('X-RateLimit-Remaining', Math.max(0, this.options.maxRequests - requestInfo.count))
+      reply.header(
+        'X-RateLimit-Remaining',
+        Math.max(0, this.options.maxRequests - requestInfo.count)
+      )
       reply.header('X-RateLimit-Reset', Math.ceil(requestInfo.resetTime / 1000))
     }
 
@@ -74,28 +77,35 @@ class RateLimiter {
   }
 }
 
-// Pre-configured rate limiters
-export function createRateLimiter(options: RateLimitOptions) {
-  return new RateLimiter(options)
-}
-
-// Common rate limiters
-export const authRateLimit = createRateLimiter({
+// Pre-configured rate limiters (development-friendly limits)
+export const authRateLimit = new RateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 5, // 5 requests per 15 minutes for auth endpoints
+  maxRequests: 20, // 20 requests per 15 minutes (increased for development)
+  keyGenerator: (request) => request.ip,
+  skipSuccessfulRequests: false,
+  skipFailedRequests: false,
   message: 'Too many authentication attempts, please try again later.',
+  headers: true,
 })
 
-export const apiRateLimit = createRateLimiter({
+export const apiRateLimit = new RateLimiter({
   windowMs: 60 * 1000, // 1 minute
-  maxRequests: 100, // 100 requests per minute for general API
+  maxRequests: 200, // 200 requests per minute (increased for development)
+  keyGenerator: (request) => request.ip,
+  skipSuccessfulRequests: false,
+  skipFailedRequests: false,
   message: 'Too many requests, please try again later.',
+  headers: true,
 })
 
-export const chatRateLimit = createRateLimiter({
+export const chatRateLimit = new RateLimiter({
   windowMs: 60 * 1000, // 1 minute
   maxRequests: 200, // 200 messages per minute
+  keyGenerator: (request) => request.ip,
+  skipSuccessfulRequests: false,
+  skipFailedRequests: false,
   message: 'Too many messages, please slow down.',
+  headers: true,
 })
 
 // Plugin to register rate limiting
