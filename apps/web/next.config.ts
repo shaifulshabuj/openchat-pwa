@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Removed static export for development to support dynamic routes
+  // Using standard build for dynamic routes, not static export
   // output: 'export',
   // trailingSlash: true,
   images: {

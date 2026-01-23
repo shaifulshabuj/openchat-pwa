@@ -74,25 +74,28 @@ jobs:
         run: pnpm build --filter=openchat-web
 
       - name: Upload build artifacts
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          path: ./apps/web/out
+          name: frontend-build
+          path: ./apps/web/.next
+          retention-days: 1
 
-  deploy-frontend:
-    name: Deploy Frontend to GitHub Pages
-    runs-on: ubuntu-latest
-    needs: build-frontend
-    if: github.ref == 'refs/heads/main'
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+  # TODO: Setup proper frontend deployment (Vercel/Netlify)
+  # deploy-frontend:
+  #   name: Deploy Frontend to GitHub Pages
+  #   runs-on: ubuntu-latest
+  #   needs: build-frontend
+  #   if: github.ref == 'refs/heads/main'
+  #   permissions:
+  #     pages: write
+  #     id-token: write
+  #   environment:
+  #     name: github-pages
+  #     url: ${{ steps.deployment.outputs.page_url }}
+  #   steps:
+  #     - name: Deploy to GitHub Pages
+  #       id: deployment
+  #       uses: actions/deploy-pages@v4
 
   deploy-backend:
     name: Deploy Backend to Railway
@@ -103,8 +106,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
       - name: Deploy to Railway
-        uses: bervProject/railway-deploy@v1
-        with:
-          railway_token: ${{ secrets.RAILWAY_TOKEN }}
-          service: 'openchat-api'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway deploy --service openchat-api
