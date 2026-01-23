@@ -19,8 +19,8 @@ COPY apps/api ./
 # Set environment variables for Prisma
 ENV PRISMA_ENGINE_TYPE="binary"
 
-# Generate Prisma client for Alpine Linux
-RUN PRISMA_CLI_BINARY_TARGETS="linux-musl" npx prisma generate
+# Generate Prisma client for Alpine Linux using pinned version
+RUN PRISMA_CLI_BINARY_TARGETS="linux-musl" npm run db:generate
 
 # Build the application
 RUN npm run build
