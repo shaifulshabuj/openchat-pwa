@@ -50,7 +50,10 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#10b981" />
         <meta name="msapplication-tap-highlight" content="no" />
       </head>
-      <body className={`font-inter antialiased bg-gray-50 dark:bg-gray-900`}>
+      <body
+        className={`font-inter antialiased bg-gray-50 dark:bg-gray-900`}
+        suppressHydrationWarning
+      >
         <AuthErrorBoundary>
           {children}
         </AuthErrorBoundary>

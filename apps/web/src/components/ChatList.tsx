@@ -75,6 +75,23 @@ export function ChatList() {
     return content
   }
 
+  const getUnreadCount = (chat: Chat) => {
+    if (!chat.lastMessage) {
+      return 0
+    }
+
+    const lastReadAt = localStorage.getItem(`chat_read_${chat.id}`)
+    if (lastReadAt) {
+      const lastReadTime = new Date(lastReadAt).getTime()
+      const lastMessageTime = new Date(chat.lastMessage.createdAt).getTime()
+      if (lastReadTime >= lastMessageTime) {
+        return 0
+      }
+    }
+
+    return chat.unreadCount
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -110,6 +127,7 @@ export function ChatList() {
         const displayName = getChatDisplayName(chat)
         const avatar = getChatAvatar(chat)
         const lastMessage = getLastMessagePreview(chat)
+        const unreadCount = getUnreadCount(chat)
         const timeAgo = chat.lastMessage 
           ? dayjs(chat.lastMessage.createdAt).fromNow()
           : dayjs(chat.createdAt).fromNow()
@@ -132,9 +150,9 @@ export function ChatList() {
                   )}
                 </div>
                 
-                {chat.unreadCount > 0 && (
+                {unreadCount > 0 && (
                   <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {chat.unreadCount > 9 ? '9+' : chat.unreadCount}
+                    {unreadCount > 9 ? '9+' : unreadCount}
                   </div>
                 )}
               </div>

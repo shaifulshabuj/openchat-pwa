@@ -1,34 +1,41 @@
 # Codex Work Progress and Reply
 
-## Progress Summary
-- Set up test environment configs and Docker test services: `apps/api/.env.test`, `docker-compose.test.yml`.
-- Ensured tests load `.env.test` and use test DB/Redis defaults: `apps/api/src/tests/setup.ts`.
-- Fixed read receipts tests to match actual route paths and responses: `apps/api/src/tests/read-receipts.test.ts`.
-- Aligned API docs/health tests to updated endpoints: `apps/api/src/tests/api.test.ts`.
-- Added production env validation and performance middleware: `apps/api/src/utils/env.ts`, `apps/api/src/middleware/performance.ts`.
-- Added comprehensive health route with DB/Redis checks and registered it: `apps/api/src/routes/health.ts`, `apps/api/src/index.ts`.
-- Added production scripts: `apps/api/package.json`.
-- Added web production env defaults and privacy-first analytics utility: `apps/web/.env.production`, `apps/web/src/utils/analytics.ts`.
-- Improved real-time typing/status handling in chat UI: `apps/web/src/app/chat/[chatId]/page.tsx`.
+## Summary of Work Completed
+- Implemented contact management API without schema changes:
+  - `apps/api/src/routes/contacts.ts` (contacts list, requests list, request send, accept/decline, block/unblock)
+  - `apps/api/src/services/contacts.ts` (helpers for private chat + metadata parsing)
+  - `apps/api/src/index.ts` (registered `/api/contacts` and secured `/api/users/search`)
+- Added contact management web client + state:
+  - `apps/web/src/services/contacts.ts` (contacts API client)
+  - `apps/web/src/store/contacts.ts` (contacts + request store, live status updates)
+- Built contacts UI and QR input:
+  - `apps/web/src/components/Contacts/ContactsPanel.tsx`
+  - `apps/web/src/components/QRCodeScanner.tsx`
+  - `apps/web/src/app/page.tsx` (Contacts tab + “+” modal)
+- Fixed chat experience issues:
+  - `apps/api/src/routes/chats.ts` (parse `page`/`limit` to numbers to prevent Prisma errors)
+  - `apps/web/src/app/chat/[chatId]/page.tsx` (stop double send, auto-scroll to latest, mark read and cache `chat_read_*`)
+  - `apps/web/src/components/ChatList.tsx` (override unread badge using cached read timestamp)
+- UI polish fixes:
+  - `apps/web/src/components/ui/input.tsx` (input text color in light/dark)
+  - `apps/web/src/components/ui/label.tsx` (label color for light/dark)
+  - `apps/web/src/app/layout.tsx` (suppress hydration warnings caused by extensions)
+  - `apps/web/src/app/page.tsx` (removed “@username • Status” line in welcome banner)
+- Status updates:
+  - `apps/web/src/components/Contacts/ContactsPanel.tsx` listens for `user-status-changed` to update status live.
 
-## Test Results
-- `npx vitest run` (apps/api) ✅ 36 passed / 1 skipped.
-- `npx vitest run src/tests/read-receipts.test.ts` ✅ 12/12.
-- `npx vitest run src/tests/message-crud.test.ts` ✅ 8/8.
-- Production build verified: `npm run build:prod` + `NODE_ENV=production node dist/index.js` and `/health` responded OK.
-- Web static build verified: `STATIC_EXPORT=true pnpm run build` in `apps/web`.
+## Manual Verification Performed
+- API contact flow via HTTP:
+  - search user → send request → accept → fetch contacts → send message
+  - Logs saved in `/tmp/contact_flow.log` and `/tmp/contact_flow_check.log`
+- API tests:
+  - `npx vitest run` (apps/api) ✅ 36 passed / 1 skipped.
 
-## Notes
-- Docker test services are running via `docker-compose -f docker-compose.test.yml up -d`.
-- Corepack signature errors were avoided by using `~/.npm-global/bin/pnpm` directly.
-- Health endpoint now returns `status`, `version`, `environment`, and `checks` (DB/Redis), no `uptime`.
-- API docs JSON is served at `/docs` and Swagger UI at `/docs/ui`.
+## Known Behavior / Notes
+- Contact requests and block/unblock are stored as `Message` rows with `type: CONTACT` and metadata (no schema change).
+- `/api/users/search` now requires auth and uses Prisma directly.
+- Unread badge is now client-side consistent based on last seen timestamp; backend `unreadCount` is unchanged.
 
 ## Next Priority Task Assigned
-- Task 2: Deploy optimized web application to GitHub Pages.
-- Focus: verify CI/CD workflow, ensure production env vars, and confirm deployed app functionality.
-
-## What To Do Next
-1. If needed, stop test containers: `docker-compose -f docker-compose.test.yml down`.
-2. Optional: update CI to run API tests now that test services exist.
-3. Optional: add a `NEXT_PUBLIC_ANALYTICS_ENDPOINT` if telemetry is desired.
+- Task 2: Production build optimization (API production configuration and verification).
+- Focus: production build scripts, error handling, performance/security middleware, and verify `NODE_ENV=production npm start`.

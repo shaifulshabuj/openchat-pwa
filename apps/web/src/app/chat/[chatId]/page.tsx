@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
@@ -49,6 +49,7 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [messageReadStatus, setMessageReadStatus] = useState<Record<string, ReadStatus>>({})
   const [unreadMessages, setUnreadMessages] = useState<Set<string>>(new Set())
   const [participantStatuses, setParticipantStatuses] = useState<Record<string, string>>({})
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
   const { user } = useAuthStore()
   const { isConnected, on, off, joinChat, sendMessage, startTyping, stopTyping } = useSocket()
@@ -173,6 +174,19 @@ export default function ChatPage({ params }: ChatPageProps) {
         }
       )
 
+      on(
+        'messages-read',
+        ({ messageIds, chatId: eventChatId }: { messageIds: string[]; chatId: string }) => {
+          if (eventChatId === chatId) {
+            setUnreadMessages((prev) => {
+              const next = new Set(prev)
+              messageIds.forEach((id) => next.delete(id))
+              return next
+            })
+          }
+        }
+      )
+
       // Listen for reaction updates
       on('reaction-added', ({ messageId, reaction }: { messageId: string; reaction: any }) => {
         setMessages((prev) =>
@@ -245,9 +259,42 @@ export default function ChatPage({ params }: ChatPageProps) {
         off('message-deleted')
         off('reaction-added')
         off('reaction-removed')
+        off('messages-read')
       }
     }
   }, [isConnected, chatId, joinChat, on, off, user?.id])
+
+  useEffect(() => {
+    if (!messages.length || !user?.id) return
+
+    const unread = messages.filter((message) => message.senderId !== user.id).map((message) => message.id)
+    if (unread.length === 0) return
+
+    const markRead = async () => {
+      try {
+        await messageStatusAPI.markAsRead(unread)
+        const latestMessage = messages.reduce((latest, message) => {
+          if (!latest) return message
+          return new Date(message.createdAt).getTime() > new Date(latest.createdAt).getTime()
+            ? message
+            : latest
+        }, null as Message | null)
+        if (latestMessage) {
+          localStorage.setItem(`chat_read_${chatId}`, latestMessage.createdAt)
+        }
+        setUnreadMessages(new Set())
+      } catch (error) {
+        console.error('Failed to mark messages read:', error)
+      }
+    }
+
+    markRead()
+  }, [messages, user?.id])
+
+  useEffect(() => {
+    if (!messagesEndRef.current) return
+    messagesEndRef.current.scrollIntoView({ behavior: 'auto' })
+  }, [messages])
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user) return
@@ -255,11 +302,6 @@ export default function ChatPage({ params }: ChatPageProps) {
     try {
       // Send via API for persistence
       await chatAPI.sendMessage(chatId, { content: newMessage.trim() })
-
-      // Also send via Socket.IO for real-time
-      if (isConnected) {
-        sendMessage(chatId, newMessage.trim())
-      }
 
       setNewMessage('')
     } catch (error) {
@@ -679,6 +721,7 @@ export default function ChatPage({ params }: ChatPageProps) {
               )
             })
           )}
+          <div ref={messagesEndRef} />
         </main>
 
         {/* Message Input */}

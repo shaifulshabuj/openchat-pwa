@@ -247,7 +247,8 @@ export default async function chatRoutes(fastify: FastifyInstance) {
   fastify.get('/:chatId/messages', { preHandler: authMiddleware }, async (request: any, reply) => {
     try {
       const { chatId } = request.params
-      const { page = 1, limit = 50 } = request.query
+      const page = Number(request.query?.page ?? 1)
+      const limit = Number(request.query?.limit ?? 50)
 
       // Check if user is participant
       const participation = await prisma.chatParticipant.findUnique({

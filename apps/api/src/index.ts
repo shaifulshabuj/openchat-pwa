@@ -13,10 +13,13 @@ import reactionRoutes from './routes/reactions.js'
 import messageStatusRoutes from './routes/messageStatus.js'
 import docsRoutes from './routes/docs.js'
 import healthRoutes from './routes/health.js'
+import contactRoutes from './routes/contacts.js'
 import securityPlugin from './middleware/security.js'
 import { rateLimitPlugin } from './middleware/rateLimit.js'
 import { validateEnv } from './utils/env.js'
 import performancePlugin from './middleware/performance.js'
+import { prisma } from './utils/database.js'
+import { authMiddleware } from './middleware/auth.js'
 
 // Load environment variables
 dotenv.config()
@@ -77,11 +80,12 @@ export const build = async () => {
   app.register(uploadRoutes, { prefix: '/api/upload' })
   app.register(reactionRoutes, { prefix: '/api/reactions' })
   app.register(messageStatusRoutes, { prefix: '/api/message-status' })
+  app.register(contactRoutes, { prefix: '/api/contacts' })
   app.register(docsRoutes)
   app.register(healthRoutes)
 
   // Users search endpoint
-  app.get('/api/users/search', async (request: any, reply) => {
+  app.get('/api/users/search', { preHandler: authMiddleware }, async (request: any, reply) => {
     try {
       const { q } = request.query
 
@@ -89,7 +93,7 @@ export const build = async () => {
         return reply.status(400).send({ error: 'Query must be at least 2 characters' })
       }
 
-      const users = await (app as any).prisma.user.findMany({
+      const users = await prisma.user.findMany({
         where: {
           OR: [
             { username: { contains: q, mode: 'insensitive' } },

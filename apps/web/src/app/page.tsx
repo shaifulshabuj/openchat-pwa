@@ -10,7 +10,6 @@ import {
   Search,
   MoreHorizontal,
   Plus,
-  Send,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { useSocket } from '@/hooks/useSocket'
@@ -18,11 +17,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ChatList } from '@/components/ChatList'
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle'
+import { ContactsPanel } from '@/components/Contacts/ContactsPanel'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('chats')
   const [message, setMessage] = useState('')
   const [mounted, setMounted] = useState(false)
+  const [showContactModal, setShowContactModal] = useState(false)
   const { user, isAuthenticated, isLoading, logout, checkAuth } = useAuthStore()
   const { isConnected, joinChat, sendMessage } = useSocket()
   const router = useRouter()
@@ -110,9 +111,6 @@ export default function Home() {
             <p className="text-sm text-green-800 dark:text-green-200">
               Welcome back, <span className="font-medium">{user.displayName}</span>!
             </p>
-            <p className="text-xs text-green-600 dark:text-green-300">
-              @{user.username} • Status: {user.status}
-            </p>
           </div>
         )}
 
@@ -155,7 +153,10 @@ export default function Home() {
 
               {/* Floating Action Button */}
               <div className="absolute bottom-6 right-6">
-                <button className="w-14 h-14 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors">
+                <button
+                  onClick={() => setShowContactModal(true)}
+                  className="w-14 h-14 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
+                >
                   <Plus className="w-6 h-6" />
                 </button>
               </div>
@@ -163,18 +164,7 @@ export default function Home() {
           )}
 
           {activeTab === 'contacts' && (
-            <div className="h-full flex items-center justify-center p-8">
-              <div className="text-center">
-                <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  Contact Management Ready
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm max-w-sm">
-                  User search API endpoint implemented. Contact management features coming in next
-                  phase.
-                </p>
-              </div>
-            </div>
+            <ContactsPanel />
           )}
 
           {activeTab === 'calls' && (
@@ -223,6 +213,25 @@ export default function Home() {
           )}
         </main>
       </div>
+
+      {showContactModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                Start a conversation
+              </h2>
+              <button
+                onClick={() => setShowContactModal(false)}
+                className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-200"
+              >
+                Close
+              </button>
+            </div>
+            <ContactsPanel onClose={() => setShowContactModal(false)} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
