@@ -59,7 +59,48 @@
 
 ---
 
-## 🎯 **PRIORITY TASK 1: Production Build Optimization**
+## 🎯 **PRIORITY TASK 1: Contact Management to Enable Chat Start**
+
+**Current Status:** Contacts UI is placeholder; no contact search/add flow  
+**Target:** Allow users to find/add contacts and start new conversations from the UI  
+
+**Instructions:**
+
+```bash
+TASK: Implement contact management (minimum viable) to enable starting chats
+
+FEATURES REQUIRED:
+1. Contact search (by username/email) and list results
+2. Add contact request + accept/decline flow
+3. Contact list UI with empty states and search
+4. Wire "+" (Start new conversation) to contact search/results
+5. QR code scan to add contacts (UI + API hook)
+6. Block/unblock contact (basic UI + API hook)
+
+SCOPE NOTES:
+- Keep auth logic unchanged
+- Use existing API response formats/patterns
+- Avoid schema changes unless absolutely required
+
+FILES TO MODIFY (likely):
+- apps/api/src/routes/contacts.ts (new or existing)
+- apps/api/src/routes/users.ts (search endpoint if missing)
+- apps/api/src/services/contacts.ts (new)
+- apps/api/src/index.ts (route registration)
+- apps/web/src/app/page.tsx (wire + button)
+- apps/web/src/components/Contacts/ (new UI components)
+- apps/web/src/services/contacts.ts (API client)
+- apps/web/src/store/contacts.ts (state management)
+- apps/web/src/components/QRCodeScanner.tsx (new)
+
+TESTING:
+- npx vitest run (apps/api)
+- Manual: open app, search user, add contact, start chat
+```
+
+---
+
+## 🎯 **PRIORITY TASK 2: Production Build Optimization**
 
 **Current Status:** API runs successfully but needs production optimization  
 **Target:** Prepare production-ready build with optimizations  
@@ -109,7 +150,7 @@ TESTING:
 
 ---
 
-## 🎯 **PRIORITY TASK 2: Deploy to Production (GitHub Pages)**
+## 🎯 **PRIORITY TASK 3: Deploy to Production (GitHub Pages)**
 
 **Current Status:** Web app build ready, CI/CD pipeline fixed  
 **Target:** Deploy optimized web application to GitHub Pages  
@@ -161,7 +202,7 @@ VERIFICATION:
 
 ---
 
-## 🎯 **PRIORITY TASK 3: API Production Optimization**
+## 🎯 **PRIORITY TASK 4: API Production Optimization**
 
 **Current Status:** API runs successfully, needs production optimization  
 **Target:** Prepare production-ready API build with optimizations  
@@ -258,7 +299,7 @@ VERIFICATION:
 
 ---
 
-## 🎯 **PRIORITY TASK 4: Add Real-Time Chat Features**
+## 🎯 **PRIORITY TASK 5: Add Real-Time Chat Features**
 
 **Current Status:** Socket.IO backend ready, needs frontend integration  
 **Target:** Implement real-time messaging functionality  
@@ -308,7 +349,7 @@ TESTING:
 
 ---
 
-## 🎯 **PRIORITY TASK 5: Performance Optimization & Monitoring**
+## 🎯 **PRIORITY TASK 6: Performance Optimization & Monitoring**
 
 **Current Status:** Application functional, needs performance optimization  
 **Target:** Optimize performance and add monitoring capabilities  
@@ -387,21 +428,23 @@ curl http://localhost:8002/health        # Health check verification
 ## 🎯 **SESSION GUIDELINES**
 
 **Work Order:**
-1. Complete Task 1 (Database test environment) → Verify → Report
+1. Complete Task 1 (Contact management to enable chat start) → Verify → Report
 2. Complete Task 2 (Production optimization) → Verify → Report  
 3. Complete Task 3 (GitHub Pages deployment) → Verify → Report
-4. Complete Task 4 (Real-time features) → Verify → Report
-5. Complete Task 5 (Performance monitoring) → Verify → Report
+4. Complete Task 4 (API production optimization) → Verify → Report
+5. Complete Task 5 (Real-time features) → Verify → Report
+6. Complete Task 6 (Performance monitoring) → Verify → Report
 
 **After Each Task:**
 
 ```bash
 # Verification commands based on task
-# Task 1: npm test (verify database tests work)
+# Task 1: Manual - add/search contact, start chat, verify UI flows
 # Task 2: NODE_ENV=production npm start (verify production build)  
 # Task 3: Check deployed GitHub Pages URL
-# Task 4: Test real-time features across browser tabs
-# Task 5: Check performance metrics and monitoring
+# Task 4: NODE_ENV=production npm start (verify production build)
+# Task 5: Test real-time features across browser tabs
+# Task 6: Check performance metrics and monitoring
 ```
 
 **Reporting Format:**

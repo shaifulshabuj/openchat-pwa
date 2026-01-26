@@ -562,17 +562,18 @@ All new features are **fully functional** and ready for commit. The Phase 1 comp
 
 ### **🟡 MEDIUM PRIORITY (Next Phase - 3-4 weeks)**
 
-7. **Complete Contacts Management**
+7. **Complete Contacts Management (Required to Start Conversations)**
 
    ```
-   Priority: P2
-   Time: 1 week
+   Priority: P1
+   Time: 1-2 weeks
    Tasks:
-   - [ ] Build contact list UI
-   - [ ] Add contact search functionality
-   - [ ] Implement add/contact by username
+   - [ ] Add contact search API + list endpoints
+   - [ ] Build contact list UI with search + empty states
+   - [ ] Implement add/contact by username (request/accept flow)
+   - [ ] Wire "Start new conversation" to contact search/results
    - [ ] Add QR code scanning for contacts
-   - [ ] Add contact blocking UI
+   - [ ] Add contact blocking/unblocking UI + API hooks
    ```
 
 8. **Implement Settings Pages**
