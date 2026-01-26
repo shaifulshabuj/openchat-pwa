@@ -50,6 +50,10 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [unreadMessages, setUnreadMessages] = useState<Set<string>>(new Set())
   const [participantStatuses, setParticipantStatuses] = useState<Record<string, string>>({})
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const longPressTimerRef = useRef<number | null>(null)
+  const [openMenuMessageId, setOpenMenuMessageId] = useState<string | null>(null)
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null)
+  const highlightTimerRef = useRef<number | null>(null)
 
   const { user } = useAuthStore()
   const { isConnected, on, off, joinChat, sendMessage, startTyping, stopTyping } = useSocket()
@@ -189,18 +193,35 @@ export default function ChatPage({ params }: ChatPageProps) {
 
       // Listen for reaction updates
       on('reaction-added', ({ messageId, reaction }: { messageId: string; reaction: any }) => {
+        if (reaction?.user?.id === user?.id) {
+          return
+        }
         setMessages((prev) =>
           prev.map((msg) => {
             if (msg.id === messageId) {
-              const reactions = (msg as any).reactions || []
-              const existingReaction = reactions.find((r: any) => r.emoji === reaction.emoji)
+              const reactions = ((msg as any).reactions || []).map((r: any) => ({
+                ...r,
+                users: r.users ? [...r.users] : [],
+              }))
+              const existingIndex = reactions.findIndex((r: any) => r.emoji === reaction.emoji)
 
-              if (existingReaction) {
-                existingReaction.count += 1
-                existingReaction.users.push({
-                  id: reaction.user.id,
-                  displayName: reaction.user.displayName,
-                })
+              if (existingIndex >= 0) {
+                const existing = reactions[existingIndex]
+                if (existing.users.some((u: any) => u.id === reaction.user.id)) {
+                  return msg
+                }
+                const users = [
+                  ...existing.users,
+                  {
+                    id: reaction.user.id,
+                    displayName: reaction.user.displayName,
+                  },
+                ]
+                reactions[existingIndex] = {
+                  ...existing,
+                  users,
+                  count: users.length,
+                }
               } else {
                 reactions.push({
                   emoji: reaction.emoji,
@@ -225,22 +246,32 @@ export default function ChatPage({ params }: ChatPageProps) {
       on(
         'reaction-removed',
         ({ messageId, userId, emoji }: { messageId: string; userId: string; emoji: string }) => {
+          if (userId === user?.id) {
+            return
+          }
           setMessages((prev) =>
             prev.map((msg) => {
               if (msg.id === messageId) {
-                const reactions = ((msg as any).reactions || [])
-                  .map((r: any) => {
-                    if (r.emoji === emoji) {
-                      return {
-                        ...r,
-                        count: r.count - 1,
-                        users: r.users.filter((u: any) => u.id !== userId),
-                        hasReacted: userId === user?.id ? false : r.hasReacted,
-                      }
+                const reactions = ((msg as any).reactions || []).map((r: any) => ({
+                  ...r,
+                  users: r.users ? [...r.users] : [],
+                }))
+                const existingIndex = reactions.findIndex((r: any) => r.emoji === emoji)
+
+                if (existingIndex >= 0) {
+                  const existing = reactions[existingIndex]
+                  const users = existing.users.filter((u: any) => u.id !== userId)
+                  if (users.length === 0) {
+                    reactions.splice(existingIndex, 1)
+                  } else {
+                    reactions[existingIndex] = {
+                      ...existing,
+                      users,
+                      count: users.length,
+                      hasReacted: userId === user?.id ? false : existing.hasReacted,
                     }
-                    return r
-                  })
-                  .filter((r: any) => r.count > 0)
+                  }
+                }
 
                 return { ...msg, reactions }
               }
@@ -296,14 +327,34 @@ export default function ChatPage({ params }: ChatPageProps) {
     messagesEndRef.current.scrollIntoView({ behavior: 'auto' })
   }, [messages])
 
+  const startLongPress = (messageId: string) => {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current)
+    }
+    longPressTimerRef.current = window.setTimeout(() => {
+      setOpenMenuMessageId(messageId)
+    }, 450)
+  }
+
+  const cancelLongPress = () => {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user) return
 
     try {
       // Send via API for persistence
-      await chatAPI.sendMessage(chatId, { content: newMessage.trim() })
+      await chatAPI.sendMessage(chatId, {
+        content: newMessage.trim(),
+        replyToId: replyToMessage?.id,
+      })
 
       setNewMessage('')
+      setReplyToMessage(null)
     } catch (error) {
       console.error('Error sending message:', error)
       const errorMessage =
@@ -380,13 +431,28 @@ export default function ChatPage({ params }: ChatPageProps) {
       setMessages((prev) =>
         prev.map((msg: any) => {
           if (msg.id === messageId) {
-            const reactions = msg.reactions || []
-            const existingReaction = reactions.find((r: any) => r.emoji === emoji)
+            const reactions = (msg.reactions || []).map((r: any) => ({
+              ...r,
+              users: r.users ? [...r.users] : [],
+            }))
+            const existingIndex = reactions.findIndex((r: any) => r.emoji === emoji)
 
             if (result.action === 'added') {
-              if (existingReaction) {
-                existingReaction.count += 1
-                existingReaction.hasReacted = true
+              if (existingIndex >= 0) {
+                const existing = reactions[existingIndex]
+                if (existing.users.some((u: any) => u.id === user!.id)) {
+                  return msg
+                }
+                const users = [
+                  ...existing.users,
+                  { id: user!.id, displayName: user!.displayName },
+                ]
+                reactions[existingIndex] = {
+                  ...existing,
+                  users,
+                  count: users.length,
+                  hasReacted: true,
+                }
               } else {
                 reactions.push({
                   emoji,
@@ -396,12 +462,18 @@ export default function ChatPage({ params }: ChatPageProps) {
                 })
               }
             } else if (result.action === 'removed') {
-              if (existingReaction) {
-                existingReaction.count -= 1
-                existingReaction.hasReacted = false
-                if (existingReaction.count <= 0) {
-                  const index = reactions.indexOf(existingReaction)
-                  reactions.splice(index, 1)
+              if (existingIndex >= 0) {
+                const existing = reactions[existingIndex]
+                const users = existing.users.filter((u: any) => u.id !== user!.id)
+                if (users.length === 0) {
+                  reactions.splice(existingIndex, 1)
+                } else {
+                  reactions[existingIndex] = {
+                    ...existing,
+                    users,
+                    count: users.length,
+                    hasReacted: false,
+                  }
                 }
               }
             }
@@ -431,19 +503,26 @@ export default function ChatPage({ params }: ChatPageProps) {
       setMessages((prev) =>
         prev.map((msg: any) => {
           if (msg.id === messageId) {
-            const reactions =
-              msg.reactions
-                ?.map((r: any) => {
-                  if (r.emoji === emoji) {
-                    return {
-                      ...r,
-                      count: r.count - 1,
-                      hasReacted: false,
-                    }
-                  }
-                  return r
-                })
-                .filter((r: any) => r.count > 0) || []
+            const reactions = (msg.reactions || []).map((r: any) => ({
+              ...r,
+              users: r.users ? [...r.users] : [],
+            }))
+            const existingIndex = reactions.findIndex((r: any) => r.emoji === emoji)
+
+            if (existingIndex >= 0) {
+              const existing = reactions[existingIndex]
+              const users = existing.users.filter((u: any) => u.id !== user!.id)
+              if (users.length === 0) {
+                reactions.splice(existingIndex, 1)
+              } else {
+                reactions[existingIndex] = {
+                  ...existing,
+                  users,
+                  count: users.length,
+                  hasReacted: false,
+                }
+              }
+            }
 
             return { ...msg, reactions }
           }
@@ -536,6 +615,20 @@ export default function ChatPage({ params }: ChatPageProps) {
     const message = messages.find((msg) => msg.id === messageId)
     if (message) {
       setReplyToMessage(message)
+    }
+  }
+
+  const scrollToMessage = (messageId: string) => {
+    const element = document.getElementById(`message-${messageId}`)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setHighlightedMessageId(messageId)
+      if (highlightTimerRef.current) {
+        window.clearTimeout(highlightTimerRef.current)
+      }
+      highlightTimerRef.current = window.setTimeout(() => {
+        setHighlightedMessageId(null)
+      }, 900)
     }
   }
 
@@ -646,6 +739,7 @@ export default function ChatPage({ params }: ChatPageProps) {
               return (
                 <div
                   key={message.id}
+                  id={`message-${message.id}`}
                   className={`flex ${isOwn ? 'justify-end' : 'justify-start'} gap-2 group`}
                 >
                   {showAvatar && (
@@ -665,21 +759,53 @@ export default function ChatPage({ params }: ChatPageProps) {
 
                     <div className="relative">
                       <div
+                        onContextMenu={(event) => {
+                          event.preventDefault()
+                          setOpenMenuMessageId(message.id)
+                        }}
+                        onTouchStart={() => startLongPress(message.id)}
+                        onTouchEnd={cancelLongPress}
+                        onTouchMove={cancelLongPress}
+                        onTouchCancel={cancelLongPress}
                         className={`rounded-2xl px-4 py-2 ${
                           isOwn
-                            ? 'bg-green-500 text-white rounded-br-sm'
+                            ? 'bg-blue-500 text-white dark:bg-blue-500 rounded-br-sm'
                             : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-sm'
+                        } ${
+                          highlightedMessageId === message.id
+                            ? 'bg-yellow-200/40 dark:bg-yellow-200/20'
+                            : ''
                         }`}
                       >
                         {message.type === 'FILE' || message.content.startsWith('📎') ? (
                           renderFileMessage(message)
                         ) : (
-                          <p className="text-sm whitespace-pre-wrap">
-                            {message.content}
-                            {message.isEdited && (
-                              <span className="text-xs opacity-70 ml-2">(edited)</span>
+                          <>
+                            {message.replyTo && (
+                              <button
+                                type="button"
+                                onClick={() => scrollToMessage(message.replyTo!.id)}
+                                className={`mb-2 rounded-lg border px-2 py-1 text-xs ${
+                                  isOwn
+                                    ? 'border-white/30 bg-white/10 text-white/90'
+                                    : 'border-gray-200 bg-white text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200'
+                                }`}
+                              >
+                                <p className="font-medium">
+                                  Replying to {message.replyTo.sender.displayName}
+                                </p>
+                                <p className="truncate opacity-80">
+                                  {message.replyTo.content}
+                                </p>
+                              </button>
                             )}
-                          </p>
+                            <p className="text-sm whitespace-pre-wrap">
+                              {message.content}
+                              {message.isEdited && (
+                                <span className="text-xs opacity-70 ml-2">(edited)</span>
+                              )}
+                            </p>
+                          </>
                         )}
 
                         <div className="flex items-center justify-between mt-1">
@@ -694,7 +820,7 @@ export default function ChatPage({ params }: ChatPageProps) {
                       </div>
 
                       {/* Message Context Menu */}
-                      <div className={`absolute top-2 ${isOwn ? 'left-2' : 'right-2'}`}>
+                      <div className={`absolute -top-3 ${isOwn ? '-left-3' : '-right-3'} z-10`}>
                         <MessageContextMenu
                           messageId={message.id}
                           chatId={chatId}
@@ -705,6 +831,12 @@ export default function ChatPage({ params }: ChatPageProps) {
                           onEdit={handleEditMessage}
                           onDelete={handleDeleteMessage}
                           onReply={handleReplyToMessage}
+                          align={isOwn ? 'start' : 'end'}
+                          side={isOwn ? 'left' : 'right'}
+                          open={openMenuMessageId === message.id}
+                          onOpenChange={(open) =>
+                            setOpenMenuMessageId(open ? message.id : null)
+                          }
                         />
                       </div>
                     </div>
@@ -726,6 +858,30 @@ export default function ChatPage({ params }: ChatPageProps) {
 
         {/* Message Input */}
         <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+          {replyToMessage && (
+            <div className="mb-3 flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                  Replying to {replyToMessage.sender.displayName}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => scrollToMessage(replyToMessage.id)}
+                  className="truncate text-left text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:text-white"
+                >
+                  {replyToMessage.content}
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReplyToMessage(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                aria-label="Cancel reply"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowFileUpload(true)}
@@ -758,7 +914,7 @@ export default function ChatPage({ params }: ChatPageProps) {
             <Button
               onClick={handleSendMessage}
               disabled={!newMessage.trim() || !isConnected}
-              className="rounded-full w-10 h-10 p-0"
+              className="rounded-full w-10 h-10 p-0 bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300"
             >
               <Send className="w-5 h-5" />
             </Button>

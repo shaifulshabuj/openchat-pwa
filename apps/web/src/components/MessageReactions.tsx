@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { SmilePlus } from 'lucide-react'
 
 interface MessageReactionsProps {
@@ -24,6 +25,81 @@ export function MessageReactions({
   onRemoveReaction 
 }: MessageReactionsProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [pickerPosition, setPickerPosition] = useState<{
+    top: number
+    left: number
+    origin: string
+  } | null>(null)
+  const addButtonRef = useRef<HTMLButtonElement | null>(null)
+  const pickerRef = useRef<HTMLDivElement | null>(null)
+
+  const openPicker = () => {
+    setShowEmojiPicker(true)
+  }
+
+  const closePicker = () => {
+    setShowEmojiPicker(false)
+    setPickerPosition(null)
+  }
+
+  useEffect(() => {
+    if (!showEmojiPicker) {
+      return
+    }
+
+    const updatePosition = () => {
+      const button = addButtonRef.current
+      const picker = pickerRef.current
+      if (!button || !picker) return
+
+      const buttonRect = button.getBoundingClientRect()
+      const pickerRect = picker.getBoundingClientRect()
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      const margin = 8
+      const offset = 8
+
+      let top = buttonRect.bottom + offset
+      let origin = 'top left'
+      if (top + pickerRect.height > viewportHeight - margin) {
+        top = buttonRect.top - pickerRect.height - offset
+        origin = 'bottom left'
+      }
+
+      let left = buttonRect.left
+      if (left + pickerRect.width > viewportWidth - margin) {
+        left = buttonRect.right - pickerRect.width
+        origin = origin.replace('left', 'right')
+      }
+
+      if (left < margin) {
+        left = margin
+      }
+
+      const originX = Math.min(
+        Math.max(buttonRect.left + buttonRect.width / 2 - left, 0),
+        pickerRect.width
+      )
+      const originY = Math.min(
+        Math.max(buttonRect.top + buttonRect.height / 2 - top, 0),
+        pickerRect.height
+      )
+      const originPx = `${originX}px ${originY}px`
+      setPickerPosition({ top, left, origin: originPx })
+    }
+
+    requestAnimationFrame(() => {
+      updatePosition()
+    })
+
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [showEmojiPicker])
 
   const handleReactionClick = (emoji: string, hasReacted: boolean) => {
     if (hasReacted) {
@@ -55,7 +131,8 @@ export function MessageReactions({
       {/* Add Reaction Button */}
       <div className="relative">
         <button
-          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          ref={addButtonRef}
+          onClick={() => (showEmojiPicker ? closePicker() : openPicker())}
           className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
           title="Add reaction"
         >
@@ -63,34 +140,48 @@ export function MessageReactions({
         </button>
 
         {/* Quick Emoji Picker */}
-        {showEmojiPicker && (
-          <div className="absolute top-8 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-2 z-10">
-            <div className="flex gap-1">
-              {QUICK_REACTIONS.map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => {
-                    onAddReaction(messageId, emoji)
-                    setShowEmojiPicker(false)
-                  }}
-                  className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  title={`React with ${emoji}`}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {showEmojiPicker &&
+          typeof document !== 'undefined' &&
+          createPortal(
+            <div className="fixed inset-0 z-40">
+              <button
+                type="button"
+                className="absolute inset-0 cursor-default"
+                onClick={closePicker}
+                aria-label="Close reactions"
+              />
+              <div
+                ref={pickerRef}
+                className="fixed z-50 rounded-lg border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-600 dark:bg-gray-800"
+                style={{
+                  top: pickerPosition?.top ?? 0,
+                  left: pickerPosition?.left ?? 0,
+                  transformOrigin: pickerPosition?.origin ?? 'top left',
+                  visibility: pickerPosition ? 'visible' : 'hidden',
+                  pointerEvents: pickerPosition ? 'auto' : 'none',
+                }}
+              >
+                <div className="flex gap-1">
+                  {QUICK_REACTIONS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        onAddReaction(messageId, emoji)
+                        closePicker()
+                      }}
+                      className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      title={`React with ${emoji}`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
       </div>
 
-      {/* Click outside to close */}
-      {showEmojiPicker && (
-        <div
-          className="fixed inset-0 z-5"
-          onClick={() => setShowEmojiPicker(false)}
-        />
-      )}
     </div>
   )
 }

@@ -21,6 +21,10 @@ interface MessageContextMenuProps {
   onEdit: (messageId: string, content: string) => void
   onDelete: (messageId: string) => void
   onReply: (messageId: string) => void
+  align?: 'start' | 'center' | 'end'
+  side?: 'top' | 'right' | 'bottom' | 'left'
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export function MessageContextMenu({ 
@@ -32,28 +36,35 @@ export function MessageContextMenu({
   createdAt,
   onEdit,
   onDelete,
-  onReply
+  onReply,
+  align = 'end',
+  side = 'bottom',
+  open,
+  onOpenChange
 }: MessageContextMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const isControlled = open !== undefined && onOpenChange
+  const menuOpen = isControlled ? open : isOpen
+  const setMenuOpen = isControlled ? onOpenChange! : setIsOpen
 
   const handleCopy = () => {
     navigator.clipboard.writeText(content)
-    setIsOpen(false)
+    setMenuOpen(false)
   }
 
   const handleEdit = () => {
     onEdit(messageId, content)
-    setIsOpen(false)
+    setMenuOpen(false)
   }
 
   const handleDelete = () => {
     onDelete(messageId)
-    setIsOpen(false)
+    setMenuOpen(false)
   }
 
   const handleReply = () => {
     onReply(messageId)
-    setIsOpen(false)
+    setMenuOpen(false)
   }
 
   // Check if message is too old to edit (24 hours)
@@ -62,24 +73,37 @@ export function MessageContextMenu({
   const canEdit = isOwn && messageAge < maxAge
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+    <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          className={`h-6 w-6 p-0 transition-opacity hover:bg-blue-500 dark:hover:bg-blue-500 ${
+            menuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          }`}
         >
           <MoreVertical className="h-3 w-3" />
           <span className="sr-only">Message options</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
-        <DropdownMenuItem onClick={handleReply} className="text-sm">
+      <DropdownMenuContent
+        align={align}
+        side={side}
+        sideOffset={8}
+        className="w-44 rounded-xl border border-gray-200 bg-white p-1.5 text-gray-800 shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+      >
+        <DropdownMenuItem
+          onClick={handleReply}
+          className="text-sm focus:bg-gray-100 focus:text-gray-900 dark:focus:bg-gray-700 dark:focus:text-gray-50"
+        >
           <Reply className="mr-2 h-4 w-4" />
           Reply
         </DropdownMenuItem>
         
-        <DropdownMenuItem onClick={handleCopy} className="text-sm">
+        <DropdownMenuItem
+          onClick={handleCopy}
+          className="text-sm focus:bg-gray-100 focus:text-gray-900 dark:focus:bg-gray-700 dark:focus:text-gray-50"
+        >
           <Copy className="mr-2 h-4 w-4" />
           Copy
         </DropdownMenuItem>
@@ -89,7 +113,10 @@ export function MessageContextMenu({
             <DropdownMenuSeparator />
             
             {canEdit && (
-              <DropdownMenuItem onClick={handleEdit} className="text-sm">
+              <DropdownMenuItem
+                onClick={handleEdit}
+                className="text-sm focus:bg-gray-100 focus:text-gray-900 dark:focus:bg-gray-700 dark:focus:text-gray-50"
+              >
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
                 {isEdited && <span className="ml-auto text-xs text-gray-500">(edited)</span>}

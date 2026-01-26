@@ -21,6 +21,17 @@
   - `apps/web/src/components/ui/label.tsx` (label color for light/dark)
   - `apps/web/src/app/layout.tsx` (suppress hydration warnings caused by extensions)
   - `apps/web/src/app/page.tsx` (removed “@username • Status” line in welcome banner)
+- Reaction updates fix:
+  - `apps/web/src/app/chat/[chatId]/page.tsx` (dedupe reaction users and counts in socket/optimistic updates to prevent double reactions)
+- Reaction picker UX:
+  - `apps/web/src/components/MessageReactions.tsx` (portal-based picker positioning within viewport; removed animation after user feedback; stable placement for top/bottom and right/left messages)
+- Message context menu UX:
+  - `apps/web/src/components/MessageContextMenu.tsx` (solid menu surface, improved hover/focus, controlled open state, side/align support)
+  - `apps/web/src/app/chat/[chatId]/page.tsx` (3-dot positioned outside bubble per side; long-press on mobile; right/left menu placement)
+- Chat UI tweaks:
+  - `apps/web/src/app/chat/[chatId]/page.tsx` (sender bubble color to blue-500; send button matches; 3-dot hover color matches)
+- Reply flow:
+  - `apps/web/src/app/chat/[chatId]/page.tsx` (reply banner above input, send replyToId, inline reply preview, clickable scroll-to message, soft highlight on target message)
 - Status updates:
   - `apps/web/src/components/Contacts/ContactsPanel.tsx` listens for `user-status-changed` to update status live.
 

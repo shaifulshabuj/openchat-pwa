@@ -291,6 +291,18 @@ export default async function chatRoutes(fastify: FastifyInstance) {
                 }
               }
             }
+          },
+          reactions: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  avatar: true
+                }
+              }
+            }
           }
         },
         orderBy: { createdAt: 'desc' },
@@ -298,9 +310,44 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         take: limit
       })
 
+      const messageWithReactions = messages.map((message: any) => {
+        const reactions = message.reactions.reduce((acc: any, reaction: any) => {
+          const existing = acc[reaction.emoji]
+          if (!existing) {
+            acc[reaction.emoji] = {
+              emoji: reaction.emoji,
+              count: 0,
+              users: [],
+              hasReacted: false
+            }
+          }
+
+          acc[reaction.emoji].count += 1
+          acc[reaction.emoji].users.push({
+            id: reaction.user.id,
+            username: reaction.user.username,
+            displayName: reaction.user.displayName,
+            avatar: reaction.user.avatar
+          })
+
+          if (reaction.userId === request.auth.userId) {
+            acc[reaction.emoji].hasReacted = true
+          }
+
+          return acc
+        }, {})
+
+        const { reactions: _reactions, ...rest } = message
+
+        return {
+          ...rest,
+          reactions: Object.values(reactions)
+        }
+      })
+
       return reply.send({
         success: true,
-        data: messages.reverse(), // Reverse to show oldest first
+        data: messageWithReactions.reverse(), // Reverse to show oldest first
         pagination: {
           page,
           limit,
