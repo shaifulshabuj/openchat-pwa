@@ -607,7 +607,7 @@ export default function ChatPage({ params }: ChatPageProps) {
                   className={`flex ${isOwn ? 'justify-end' : 'justify-start'} gap-2 group`}
                 >
                   {showAvatar && (
-                    <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shrink-0">
                       <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
                         {message.sender.displayName.charAt(0)}
                       </span>
