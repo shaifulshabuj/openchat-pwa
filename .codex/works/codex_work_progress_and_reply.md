@@ -7,6 +7,7 @@
 - Wired docs routes to serve spec at `/docs` and Swagger UI at `/docs/ui`: `apps/api/src/routes/docs.ts`.
 - Added Swagger UI dependencies to API package manifest: `apps/api/package.json`.
 - Added test utility scaffolding (helpers/factories/setup): `apps/api/src/tests/utils/testHelpers.ts`, `apps/api/src/tests/utils/testFactories.ts`, `apps/api/src/tests/setup.ts`.
+- Added vitest setup defaults for database-backed tests and a vitest config: `apps/api/src/tests/setup.ts`, `apps/api/vitest.config.ts`.
 
 ## Blocking Issue
 - Environment is running Node `v14.13.1`. Tests and npm install fail because the repo expects Node 20+.
@@ -24,7 +25,11 @@
    npx vitest run src/tests/read-receipts.test.ts --reporter=verbose
    npx vitest run src/tests/message-crud.test.ts --reporter=verbose
    ```
-3. Run verification commands if needed:
+3. Ensure Postgres/Redis are running for tests (recommended):
+   ```bash
+   docker-compose up -d postgres redis
+   ```
+4. Run verification commands if needed:
    ```bash
    npm test
    npm run type-check
