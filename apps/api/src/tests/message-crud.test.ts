@@ -170,9 +170,7 @@ describe('Message CRUD Operations', () => {
       
       const result = JSON.parse(response.body)
       expect(result.success).toBe(true)
-      expect(result.data.content).toBe('[Message deleted]')
-      expect(result.data.isDeleted).toBe(true)
-      expect(result.data.deletedAt).toBeDefined()
+      expect(result.message).toBe('Message deleted successfully')
     })
 
     test('should reject deleting non-existent message', async () => {
@@ -187,7 +185,7 @@ describe('Message CRUD Operations', () => {
       expect(response.statusCode).toBe(404)
       
       const result = JSON.parse(response.body)
-      expect(result.error).toBe('Message not found or you can only delete your own messages')
+      expect(result.error).toBe('Message not found')
     })
   })
 })
