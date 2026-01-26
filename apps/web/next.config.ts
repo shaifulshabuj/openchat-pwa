@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001',
     NEXT_PUBLIC_APP_NAME: 'OpenChat PWA',
     NEXT_PUBLIC_STATIC_EXPORT: process.env.STATIC_EXPORT === 'true' ? 'true' : 'false',
+    NEXT_PUBLIC_BASE_PATH: process.env.STATIC_EXPORT === 'true' ? '/openchat-pwa' : '',
   },
 }
 
