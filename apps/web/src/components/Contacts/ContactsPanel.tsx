@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/auth'
 import { useContactsStore } from '@/store/contacts'
 import { contactsAPI, type ContactRequest, type ContactUser } from '@/services/contacts'
 import { useSocket } from '@/hooks/useSocket'
+import { chatRoute } from '@/lib/routes'
 
 type ContactsPanelProps = {
   onClose?: () => void
@@ -77,7 +78,7 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
   }
 
   const handleStartChat = (chatId: string) => {
-    router.push(`/chat/${chatId}`)
+    router.push(chatRoute(chatId) as any)
     onClose?.()
   }
 

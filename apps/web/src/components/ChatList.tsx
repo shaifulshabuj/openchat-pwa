@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { MessageSquare } from 'lucide-react'
 import { chatAPI, type Chat } from '@/lib/api'
+import { chatRoute } from '@/lib/routes'
 import { useAuthStore } from '@/store/auth'
 import { useToast } from '@/hooks/use-toast'
 import dayjs from 'dayjs'
@@ -135,7 +136,7 @@ export function ChatList() {
         return (
           <button
             key={chat.id}
-            onClick={() => router.push(`/chat/${chat.id}`)}
+            onClick={() => router.push(chatRoute(chat.id) as any)}
             className="w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
           >
             <div className="flex items-center gap-3">
