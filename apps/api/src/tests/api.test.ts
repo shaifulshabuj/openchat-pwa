@@ -94,15 +94,15 @@ describe('Authentication API', () => {
       const result = JSON.parse(response.body)
       expect(result.status).toBe('ok')
       expect(result.version).toBe('1.0.0')
-      expect(result.uptime).toBeGreaterThan(0)
+      expect(result.checks).toBeDefined()
     })
   })
 
-  describe('GET /api/docs', () => {
+  describe('GET /docs', () => {
     test('should return API documentation', async () => {
       const response = await app.inject({
         method: 'GET',
-        url: '/api/docs'
+        url: '/docs'
       })
 
       expect(response.statusCode).toBe(200)

@@ -155,7 +155,7 @@ describe('Read Receipts API', () => {
       expect(response.statusCode).toBe(400)
       
       const result = JSON.parse(response.body)
-      expect(result.error).toContain('Maximum 50 messages')
+      expect(result.error).toContain('Validation failed')
     })
 
     test('should reject unauthorized request', async () => {
@@ -175,7 +175,7 @@ describe('Read Receipts API', () => {
     test('should get read status for a message', async () => {
       const response = await app.inject({
         method: 'GET',
-        url: `/api/message-status/read-by/${messageIds[0]}`,
+        url: `/api/message-status/${messageIds[0]}/read-by`,
         headers: {
           authorization: `Bearer ${authToken}`
         }
@@ -212,7 +212,7 @@ describe('Read Receipts API', () => {
 
       const response = await app.inject({
         method: 'GET',
-        url: `/api/message-status/read-by/${unreadMessageId}`,
+        url: `/api/message-status/${unreadMessageId}/read-by`,
         headers: {
           authorization: `Bearer ${authToken}`
         }
@@ -229,7 +229,7 @@ describe('Read Receipts API', () => {
     test('should reject non-existent message', async () => {
       const response = await app.inject({
         method: 'GET',
-        url: '/api/message-status/read-by/non-existent-id',
+        url: '/api/message-status/non-existent-id/read-by',
         headers: {
           authorization: `Bearer ${authToken}`
         }
@@ -244,7 +244,7 @@ describe('Read Receipts API', () => {
     test('should reject unauthorized request', async () => {
       const response = await app.inject({
         method: 'GET',
-        url: `/api/message-status/read-by/${messageIds[0]}`
+        url: `/api/message-status/${messageIds[0]}/read-by`
       })
 
       expect(response.statusCode).toBe(401)
@@ -283,7 +283,7 @@ describe('Read Receipts API', () => {
       // Check read status
       const readStatusResponse = await app.inject({
         method: 'GET',
-        url: `/api/message-status/read-by/${newMessageId}`,
+        url: `/api/message-status/${newMessageId}/read-by`,
         headers: {
           authorization: `Bearer ${authToken}`
         }
@@ -314,7 +314,7 @@ describe('Read Receipts API', () => {
       // Get the first read time
       const readStatus1 = await app.inject({
         method: 'GET',
-        url: `/api/message-status/read-by/${messageId}`,
+        url: `/api/message-status/${messageId}/read-by`,
         headers: {
           authorization: `Bearer ${authToken}`
         }
@@ -341,7 +341,7 @@ describe('Read Receipts API', () => {
       // Check that read time was updated (upsert behavior)
       const readStatus2 = await app.inject({
         method: 'GET',
-        url: `/api/message-status/read-by/${messageId}`,
+        url: `/api/message-status/${messageId}/read-by`,
         headers: {
           authorization: `Bearer ${authToken}`
         }

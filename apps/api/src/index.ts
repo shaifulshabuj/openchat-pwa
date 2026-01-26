@@ -12,20 +12,25 @@ import uploadRoutes from './routes/upload.js'
 import reactionRoutes from './routes/reactions.js'
 import messageStatusRoutes from './routes/messageStatus.js'
 import docsRoutes from './routes/docs.js'
+import healthRoutes from './routes/health.js'
 import securityPlugin from './middleware/security.js'
 import { rateLimitPlugin } from './middleware/rateLimit.js'
+import { validateEnv } from './utils/env.js'
+import performancePlugin from './middleware/performance.js'
 
 // Load environment variables
 dotenv.config()
 
 export const build = async () => {
+  validateEnv()
   const app = fastify({
-    logger: true,
+    logger: process.env.NODE_ENV === 'production' ? { level: 'info' } : true,
   })
 
   // Security middleware and rate limiting
   app.register(securityPlugin)
   app.register(rateLimitPlugin)
+  app.register(performancePlugin)
 
   // Setup CORS - Allow multiple origins from environment variable
   const allowedOrigins = (
@@ -52,17 +57,6 @@ export const build = async () => {
   // File upload support
   app.register(multipart)
 
-  // Health check route with more details
-  app.get('/health', async () => {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      version: '1.0.0',
-      environment: process.env.NODE_ENV || 'development',
-      uptime: process.uptime(),
-    }
-  })
-
   // Root path for Railway health checks
   app.get('/', async () => {
     return { 
@@ -84,6 +78,7 @@ export const build = async () => {
   app.register(reactionRoutes, { prefix: '/api/reactions' })
   app.register(messageStatusRoutes, { prefix: '/api/message-status' })
   app.register(docsRoutes)
+  app.register(healthRoutes)
 
   // Users search endpoint
   app.get('/api/users/search', async (request: any, reply) => {

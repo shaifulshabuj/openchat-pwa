@@ -41,13 +41,14 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [newMessage, setNewMessage] = useState('')
   const [chat, setChat] = useState<Chat | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isTyping, setIsTyping] = useState<string[]>([])
+  const [isTyping, setIsTyping] = useState<Array<{ userId: string; username: string }>>([])
   const [showFileUpload, setShowFileUpload] = useState(false)
   const [editingMessage, setEditingMessage] = useState<{ id: string; content: string } | null>(null)
   const [isEditLoading, setIsEditLoading] = useState(false)
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null)
   const [messageReadStatus, setMessageReadStatus] = useState<Record<string, ReadStatus>>({})
   const [unreadMessages, setUnreadMessages] = useState<Set<string>>(new Set())
+  const [participantStatuses, setParticipantStatuses] = useState<Record<string, string>>({})
 
   const { user } = useAuthStore()
   const { isConnected, on, off, joinChat, sendMessage, startTyping, stopTyping } = useSocket()
@@ -74,6 +75,13 @@ export default function ChatPage({ params }: ChatPageProps) {
 
         if (chatResponse.success) {
           setChat(chatResponse.data)
+          const statuses = Object.fromEntries(
+            chatResponse.data.participants.map((participant) => [
+              participant.user.id,
+              participant.user.status,
+            ])
+          )
+          setParticipantStatuses(statuses)
         }
 
         if (messagesResponse.success) {
@@ -104,15 +112,30 @@ export default function ChatPage({ params }: ChatPageProps) {
       // Listen for typing indicators
       on('user-typing', ({ userId, username }: { userId: string; username: string }) => {
         if (userId !== user?.id) {
-          setIsTyping((prev) => [...prev.filter((u) => u !== username), username])
+          setIsTyping((prev) => {
+            if (prev.some((entry) => entry.userId === userId)) {
+              return prev
+            }
+            return [...prev, { userId, username }]
+          })
         }
       })
 
       on('user-stopped-typing', ({ userId }: { userId: string }) => {
         if (userId !== user?.id) {
-          setIsTyping((prev) => prev.filter((u) => u !== userId))
+          setIsTyping((prev) => prev.filter((entry) => entry.userId !== userId))
         }
       })
+
+      on(
+        'user-status-changed',
+        ({ userId, status }: { userId: string; username: string; status: string; lastSeen: Date }) => {
+          setParticipantStatuses((prev) => ({
+            ...prev,
+            [userId]: status,
+          }))
+        }
+      )
 
       // Listen for message edits
       on('message-edited', ({ message }: { message: any }) => {
@@ -217,6 +240,7 @@ export default function ChatPage({ params }: ChatPageProps) {
         off('new-message')
         off('user-typing')
         off('user-stopped-typing')
+        off('user-status-changed')
         off('message-edited')
         off('message-deleted')
         off('reaction-added')
@@ -283,6 +307,19 @@ export default function ChatPage({ params }: ChatPageProps) {
     }
 
     return null
+  }
+
+  const getChatStatus = () => {
+    if (!chat || chat.type !== 'PRIVATE') {
+      return isConnected ? 'Online' : 'Connecting...'
+    }
+
+    const otherUser = chat.participants.find((p) => p.user.id !== user?.id)
+    if (!otherUser) {
+      return isConnected ? 'Online' : 'Connecting...'
+    }
+
+    return participantStatuses[otherUser.user.id] || 'OFFLINE'
   }
 
   const handleFileUploaded = (fileInfo: any) => {
@@ -525,11 +562,11 @@ export default function ChatPage({ params }: ChatPageProps) {
                     {getChatDisplayName()}
                   </h1>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {isConnected ? 'Online' : 'Connecting...'}
+                    {getChatStatus()}
                     {isTyping.length > 0 && (
                       <span className="text-green-600">
                         {' • '}
-                        {isTyping.join(', ')} typing...
+                        {isTyping.map((entry) => entry.username).join(', ')} typing...
                       </span>
                     )}
                   </p>
