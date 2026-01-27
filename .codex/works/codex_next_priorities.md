@@ -132,6 +132,11 @@ STEPS:
 5. Test production build locally
 6. Document deployment requirements
 
+ADDITIONAL TASK DETAIL:
+- Ensure `NODE_ENV=production` uses structured logging and disables dev-only plugins.
+- Verify security headers via Fastify/Helmet (or equivalent) and document defaults.
+- Confirm production start does not load Swagger UI unless enabled.
+
 SUCCESS CRITERIA:
 - Production build runs without development dependencies
 - Environment validation prevents startup with invalid config  

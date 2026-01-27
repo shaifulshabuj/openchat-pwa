@@ -8,12 +8,11 @@
 ---
 
 ## ✅ **Latest Progress Update (January 26, 2026)**
-- ✅ API production optimizations shipped (env validation, performance middleware, expanded health checks).
+- ✅ Contact management shipped (contacts API, UI, QR add flow) and “Start new conversation” wired.
+- ✅ Chat UX improvements: reply flow, reaction picker/menu, unread badge consistency, auto-scroll fixes.
+- ✅ API tests verified: `npx vitest run` (36 passed / 1 skipped).
 - ✅ API docs served at `/docs` and Swagger UI at `/docs/ui`.
-- ✅ API tests verified: `npx vitest run` (36 passed / 1 skipped), read receipts (12/12), message CRUD (8/8).
-- ✅ Test environment configured with `.env.test` and `docker-compose.test.yml`.
-- ✅ Web static export build verified; production env defaults + analytics utility added.
-- ⏭️ Next priority: GitHub Pages deployment verification.
+- ⏭️ Next priority: Production build optimization.
 
 ## 🎯 **Executive Summary**
 
@@ -562,18 +561,18 @@ All new features are **fully functional** and ready for commit. The Phase 1 comp
 
 ### **🟡 MEDIUM PRIORITY (Next Phase - 3-4 weeks)**
 
-7. **Complete Contacts Management (Required to Start Conversations)**
+7. **Complete Contacts Management (Required to Start Conversations)** ✅
 
    ```
    Priority: P1
    Time: 1-2 weeks
    Tasks:
-   - [ ] Add contact search API + list endpoints
-   - [ ] Build contact list UI with search + empty states
-   - [ ] Implement add/contact by username (request/accept flow)
-   - [ ] Wire "Start new conversation" to contact search/results
-   - [ ] Add QR code scanning for contacts
-   - [ ] Add contact blocking/unblocking UI + API hooks
+   - [x] Add contact search API + list endpoints
+   - [x] Build contact list UI with search + empty states
+   - [x] Implement add/contact by username (request/accept flow)
+   - [x] Wire "Start new conversation" to contact search/results
+   - [x] Add QR code scanning for contacts
+   - [x] Add contact blocking/unblocking UI + API hooks
    ```
 
 8. **Implement Settings Pages**
