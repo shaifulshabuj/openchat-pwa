@@ -6,12 +6,6 @@ import { useEffect, useState } from 'react'
 export function DarkModeToggle() {
   const [isDark, setIsDark] = useState(false)
 
-  useEffect(() => {
-    // Check if dark mode is enabled on mount
-    const isDarkMode = document.documentElement.classList.contains('dark')
-    setIsDark(isDarkMode)
-  }, [])
-
   const toggleDarkMode = () => {
     const newDarkMode = !isDark
     setIsDark(newDarkMode)
@@ -26,28 +20,31 @@ export function DarkModeToggle() {
   }
 
   useEffect(() => {
-    // Apply saved dark mode preference on mount
-    const darkMode = localStorage.getItem('darkMode')
-    if (darkMode === 'enabled') {
-      document.documentElement.classList.add('dark')
-      setIsDark(true)
-    } else if (darkMode === 'disabled') {
-      document.documentElement.classList.remove('dark')
-      setIsDark(false)
-    } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      if (prefersDark) {
-        document.documentElement.classList.add('dark')
-        setIsDark(true)
+    const stored = localStorage.getItem('darkMode')
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const shouldDark = stored === 'enabled' || (!stored && media.matches)
+    document.documentElement.classList.toggle('dark', shouldDark)
+    setIsDark(shouldDark)
+
+    const handleChange = (event: MediaQueryListEvent) => {
+      const hasPreference = localStorage.getItem('darkMode')
+      if (hasPreference) {
+        return
       }
+      document.documentElement.classList.toggle('dark', event.matches)
+      setIsDark(event.matches)
+    }
+
+    media.addEventListener('change', handleChange)
+    return () => {
+      media.removeEventListener('change', handleChange)
     }
   }, [])
 
   return (
     <button
       onClick={toggleDarkMode}
-      className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+      className="p-2 rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
       aria-label="Toggle dark mode"
     >
       {isDark ? (

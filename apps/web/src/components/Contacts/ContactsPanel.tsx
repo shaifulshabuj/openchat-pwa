@@ -12,6 +12,7 @@ import { useContactsStore } from '@/store/contacts'
 import { contactsAPI, type ContactRequest, type ContactUser } from '@/services/contacts'
 import { useSocket } from '@/hooks/useSocket'
 import { chatRoute } from '@/lib/routes'
+import { useToast } from '@/hooks/use-toast'
 
 type ContactsPanelProps = {
   onClose?: () => void
@@ -22,6 +23,7 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
   const { user } = useAuthStore()
   const { contacts, requests, isLoading, error, refreshAll, updateStatus } = useContactsStore()
   const { on, off } = useSocket()
+  const { toast } = useToast()
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState<ContactUser[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
@@ -54,23 +56,38 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
   const handleSearch = async (value?: string | React.MouseEvent) => {
     const rawValue = typeof value === 'string' ? value : query
     const searchValue = rawValue.trim()
-    if (!searchValue) return
+    if (!searchValue) return []
     setSearchLoading(true)
     setSearchError(null)
     try {
       const response = await contactsAPI.searchUsers(searchValue)
       const filtered = response.data.filter((result) => result.id !== user?.id)
       setSearchResults(filtered)
+      return filtered
     } catch (err: any) {
       setSearchError(err?.message || 'Failed to search users')
+      return []
     } finally {
       setSearchLoading(false)
     }
   }
 
   const handleSendRequest = async (userId: string) => {
-    await contactsAPI.sendRequest(userId)
-    await refreshAll()
+    try {
+      await contactsAPI.sendRequest(userId)
+      await refreshAll()
+      toast({
+        variant: 'success',
+        title: 'Request sent',
+        description: 'Contact request sent successfully.',
+      })
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Request failed',
+        description: error?.message || 'Unable to send request.',
+      })
+    }
   }
 
   const handleRespond = async (requestId: string, status: 'accepted' | 'declined') => {
@@ -104,7 +121,14 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
       }
     }
     setQuery(trimmed)
-    await handleSearch(trimmed)
+    const results = await handleSearch(trimmed)
+    if (!results.length) {
+      toast({
+        variant: 'destructive',
+        title: 'No matches',
+        description: 'No users found for that code. Try a username or user ID.',
+      })
+    }
   }
 
   return (

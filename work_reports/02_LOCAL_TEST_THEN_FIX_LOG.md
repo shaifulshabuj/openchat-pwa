@@ -50,6 +50,83 @@ This document catalogs all critical issues discovered during local test report a
 ### Files Updated (January 27, 2026 20:42 JST)
 - `apps/web/src/app/chat/[chatId]/page.tsx` (forward selection, note, forwarded tag, auto-highlight)
 
+## ✅ Latest Progress Update (January 28, 2026 00:04 JST)
+- ✅ QR scan UX improved: empty scan now shows guidance, Enter triggers scan, QR search provides feedback on no matches.
+- ✅ Contact request flow now shows success/error toast on send.
+
+### Files Updated (January 28, 2026 00:04 JST)
+- `apps/web/src/components/QRCodeScanner.tsx` (empty input toast + Enter key trigger)
+- `apps/web/src/components/Contacts/ContactsPanel.tsx` (QR scan feedback, request toast, search return handling)
+
+## ✅ Latest Progress Update (January 28, 2026 00:07 JST)
+- ✅ Added camera-based QR scanning using html5-qrcode with a modal preview.
+- ✅ “Use camera” button launches scanner and auto-submits decoded QR text.
+
+### Files Updated (January 28, 2026 00:07 JST)
+- `apps/web/src/components/QRCodeScanner.tsx` (camera scanner modal + cleanup)
+- `apps/web/package.json` (added `html5-qrcode`)
+
+## ✅ Latest Progress Update (January 28, 2026 00:11 JST)
+- ✅ Added camera permission handling with persisted “denied” state and guidance.
+- ✅ Scanner now blocks open if permission is denied and prompts user to enable it.
+
+### Files Updated (January 28, 2026 00:11 JST)
+- `apps/web/src/components/QRCodeScanner.tsx` (permission gating + persistence)
+
+## ✅ Latest Progress Update (January 28, 2026 00:15 JST)
+- ✅ Added “Retry camera” button to clear blocked state and re-request permission.
+
+### Files Updated (January 28, 2026 00:15 JST)
+- `apps/web/src/components/QRCodeScanner.tsx` (retry action)
+
+## ✅ Latest Progress Update (January 28, 2026 00:18 JST)
+- ✅ Improved QR camera UI: icon-only camera button with solid background.
+- ✅ Dialog content uses solid surface + stronger contrast to avoid transparency.
+
+### Files Updated (January 28, 2026 00:18 JST)
+- `apps/web/src/components/QRCodeScanner.tsx` (camera button + dialog surface)
+
+## ✅ Latest Progress Update (January 28, 2026 00:22 JST)
+- ✅ Toast destructive styling updated to use solid backgrounds (fixes transparent camera error toast).
+
+### Files Updated (January 28, 2026 00:22 JST)
+- `apps/web/src/components/ui/Toast.tsx` (solid destructive toast background)
+
+## ✅ Latest Progress Update (January 28, 2026 00:27 JST)
+- ✅ Theme handling improved: preload theme class before hydration, unified dark variables, and modernized toggle UI.
+- ✅ Dark/light now driven by `:root.dark` variables to avoid mismatched backgrounds.
+
+### Files Updated (January 28, 2026 00:27 JST)
+- `apps/web/src/app/globals.css` (dark variables + color-scheme)
+- `apps/web/src/app/layout.tsx` (theme preload script)
+- `apps/web/src/components/ui/DarkModeToggle.tsx` (single source of truth + modern toggle styling)
+
+## ✅ Latest Progress Update (January 28, 2026 00:28 JST)
+- ✅ Fixed hydration mismatch on `<html>` due to theme class toggling by adding `suppressHydrationWarning`.
+
+### Files Updated (January 28, 2026 00:28 JST)
+- `apps/web/src/app/layout.tsx` (suppress hydration warning on html)
+
+## ✅ Latest Progress Update (January 28, 2026 00:31 JST)
+- ✅ Camera permission flow adjusted: keep dialog open on denied, add explicit permission request via getUserMedia.
+- ✅ Retry button now triggers permission prompt and restarts scanner when granted.
+
+### Files Updated (January 28, 2026 00:31 JST)
+- `apps/web/src/components/QRCodeScanner.tsx` (permission request flow)
+
+## ✅ Latest Progress Update (January 28, 2026 00:36 JST)
+- ✅ Camera start flow now only begins after explicit user permission grant; removed auto-permission request in effect.
+- ✅ Scanner no longer marks permission denied on generic start errors.
+
+### Files Updated (January 28, 2026 00:36 JST)
+- `apps/web/src/components/QRCodeScanner.tsx` (user-gesture permission + safer error handling)
+
+## ✅ Latest Progress Update (January 28, 2026 00:38 JST)
+- ✅ Added delayed mount check for camera region to avoid stuck “Waiting for camera access”.
+
+### Files Updated (January 28, 2026 00:38 JST)
+- `apps/web/src/components/QRCodeScanner.tsx` (wait for region before start)
+
 ---
 
 ## 🎯 Issues & Solutions

@@ -39,8 +39,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var stored=localStorage.getItem('darkMode');var prefers=window.matchMedia('(prefers-color-scheme: dark)').matches;var shouldDark=stored==='enabled'||(!stored&&prefers);document.documentElement.classList.toggle('dark',shouldDark);}catch(e){}})();`,
+          }}
+        />
         <link rel="manifest" href={`${process.env.STATIC_EXPORT === 'true' ? '/openchat-pwa' : ''}/manifest.json`} />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
