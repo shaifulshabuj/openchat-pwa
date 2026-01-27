@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MoreVertical, Edit, Trash2, Reply, Copy } from 'lucide-react'
+import { MoreVertical, Edit, Trash2, Reply, Copy, Forward } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
 
 interface MessageContextMenuProps {
   messageId: string
@@ -21,6 +22,7 @@ interface MessageContextMenuProps {
   onEdit: (messageId: string, content: string) => void
   onDelete: (messageId: string) => void
   onReply: (messageId: string) => void
+  onForward: (messageId: string) => void
   align?: 'start' | 'center' | 'end'
   side?: 'top' | 'right' | 'bottom' | 'left'
   open?: boolean
@@ -37,18 +39,25 @@ export function MessageContextMenu({
   onEdit,
   onDelete,
   onReply,
+  onForward,
   align = 'end',
   side = 'bottom',
   open,
   onOpenChange
 }: MessageContextMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const { toast } = useToast()
   const isControlled = open !== undefined && onOpenChange
   const menuOpen = isControlled ? open : isOpen
   const setMenuOpen = isControlled ? onOpenChange! : setIsOpen
 
   const handleCopy = () => {
     navigator.clipboard.writeText(content)
+    toast({
+      variant: 'success',
+      title: 'Copied',
+      description: 'Message copied to clipboard.',
+    })
     setMenuOpen(false)
   }
 
@@ -64,6 +73,11 @@ export function MessageContextMenu({
 
   const handleReply = () => {
     onReply(messageId)
+    setMenuOpen(false)
+  }
+
+  const handleForward = () => {
+    onForward(messageId)
     setMenuOpen(false)
   }
 
@@ -106,6 +120,14 @@ export function MessageContextMenu({
         >
           <Copy className="mr-2 h-4 w-4" />
           Copy
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={handleForward}
+          className="text-sm focus:bg-gray-100 focus:text-gray-900 dark:focus:bg-gray-700 dark:focus:text-gray-50"
+        >
+          <Forward className="mr-2 h-4 w-4" />
+          Forward
         </DropdownMenuItem>
         
         {isOwn && (

@@ -12,6 +12,7 @@ export type Contact = {
   chatId: string
   user: ContactUser
   status: 'accepted' | 'pending' | 'declined'
+  isBlocked?: boolean
 }
 
 export type ContactRequest = {

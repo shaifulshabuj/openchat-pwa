@@ -14,6 +14,11 @@
 - ✅ API docs served at `/docs` and Swagger UI at `/docs/ui`.
 - ⏭️ Next priority: Production build optimization.
 
+## ✅ **Latest Progress Update (January 27, 2026)**
+- ✅ Phase 1 gaps addressed: forward (multi‑chat + optional note), copy feedback, personal QR code card, and block/unblock UX.
+- ✅ Forwarded messages now tag “Forwarded” and briefly highlight on receive.
+- ⚠️ Local tests not re-run due to missing dependencies / Node 14 environment (Next 16 requires Node 20+).
+
 ## 🎯 **Executive Summary**
 
 OpenChat PWA is a **WeChat-inspired Progressive Web Application** built with modern web technologies. The project is currently in **production-ready phase** with core features implemented and comprehensive API documentation complete. **ALL CRITICAL PRODUCTION ISSUES RESOLVED** + **API DOCUMENTATION COMPLETE** 🚀
