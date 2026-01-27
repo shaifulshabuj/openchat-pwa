@@ -73,7 +73,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-[100svh] bg-white dark:bg-gray-900">
+    <div className="flex h-[100svh] overflow-hidden bg-white dark:bg-gray-900">
       {/* Mobile Layout - Full Screen */}
       <div className="flex flex-col w-full">
         {/* Header */}

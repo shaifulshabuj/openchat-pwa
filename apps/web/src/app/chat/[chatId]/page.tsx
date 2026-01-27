@@ -808,7 +808,7 @@ export default function ChatPage({ params }: ChatPageProps) {
   }
 
   return (
-    <div className="flex min-h-[100svh] bg-white dark:bg-gray-900">
+    <div className="flex h-[100svh] overflow-hidden bg-white dark:bg-gray-900">
       <div className="flex flex-col w-full">
         {/* Chat Header */}
         <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 pt-[env(safe-area-inset-top)]">
