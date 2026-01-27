@@ -52,6 +52,16 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
     () => requests.filter((request) => request.direction === 'outgoing'),
     [requests]
   )
+  const contactIds = useMemo(() => new Set(contacts.map((contact) => contact.user.id)), [contacts])
+  const outgoingRequestIds = useMemo(
+    () =>
+      new Set(
+        outgoingRequests
+          .map((request) => request.toUser?.id)
+          .filter(Boolean) as string[]
+      ),
+    [outgoingRequests]
+  )
 
   const handleSearch = async (value?: string | React.MouseEvent) => {
     const rawValue = typeof value === 'string' ? value : query
@@ -61,7 +71,9 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
     setSearchError(null)
     try {
       const response = await contactsAPI.searchUsers(searchValue)
-      const filtered = response.data.filter((result) => result.id !== user?.id)
+      const filtered = response.data.filter(
+        (result) => result.id !== user?.id && !contactIds.has(result.id)
+      )
       setSearchResults(filtered)
       return filtered
     } catch (err: any) {
@@ -180,10 +192,14 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
                   </p>
                   <p className="text-xs text-gray-500">@{result.username}</p>
                 </div>
-                <Button size="sm" onClick={() => handleSendRequest(result.id)}>
-                  <UserPlus className="w-4 h-4 mr-1" />
-                  Add
-                </Button>
+                {outgoingRequestIds.has(result.id) ? (
+                  <span className="text-xs text-gray-500">Request sent</span>
+                ) : (
+                  <Button size="sm" onClick={() => handleSendRequest(result.id)}>
+                    <UserPlus className="w-4 h-4 mr-1" />
+                    Add
+                  </Button>
+                )}
               </div>
             ))}
           </div>

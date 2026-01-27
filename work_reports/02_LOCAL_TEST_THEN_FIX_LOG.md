@@ -195,6 +195,12 @@ This document catalogs all critical issues discovered during local test report a
 ### Files Updated (January 28, 2026 01:56 JST)
 - `apps/web/src/components/Contacts/ContactsPanel.tsx` (QR add flow fallback logic)
 
+## ✅ Latest Progress Update (January 28, 2026 01:59 JST)
+- ✅ Contact search now hides existing contacts and shows “Request sent” for pending outgoing requests.
+
+### Files Updated (January 28, 2026 01:59 JST)
+- `apps/web/src/components/Contacts/ContactsPanel.tsx` (search filtering + request state)
+
 ## ✅ Latest Progress Update (January 28, 2026 01:01 JST)
 - ✅ QR camera preview now uses viewport-relative height and ensures video/canvas fit on iOS.
 
