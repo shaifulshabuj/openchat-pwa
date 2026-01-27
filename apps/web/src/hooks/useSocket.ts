@@ -22,6 +22,7 @@ export const useSocket = () => {
   const [error, setError] = useState<string | null>(null)
   const { token, isAuthenticated } = useAuthStore()
   const socketRef = useRef<Socket | null>(null)
+  const disconnectTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
@@ -49,22 +50,39 @@ export const useSocket = () => {
     // Connection event handlers
     socket.on('connect', () => {
       console.log('Socket connected')
+      if (disconnectTimerRef.current) {
+        window.clearTimeout(disconnectTimerRef.current)
+        disconnectTimerRef.current = null
+      }
       setIsConnected(true)
       setError(null)
     })
 
     socket.on('disconnect', () => {
       console.log('Socket disconnected')
-      setIsConnected(false)
+      if (disconnectTimerRef.current) {
+        window.clearTimeout(disconnectTimerRef.current)
+      }
+      disconnectTimerRef.current = window.setTimeout(() => {
+        setIsConnected(false)
+      }, 400)
     })
 
     socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error)
+      if (disconnectTimerRef.current) {
+        window.clearTimeout(disconnectTimerRef.current)
+        disconnectTimerRef.current = null
+      }
       setError(error.message)
       setIsConnected(false)
     })
 
     return () => {
+      if (disconnectTimerRef.current) {
+        window.clearTimeout(disconnectTimerRef.current)
+        disconnectTimerRef.current = null
+      }
       socket.disconnect()
     }
   }, [isAuthenticated, token])

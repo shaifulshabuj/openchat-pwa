@@ -165,6 +165,12 @@ This document catalogs all critical issues discovered during local test report a
 - `apps/web/src/components/QRCodeScanner.tsx` (responsive height)
 - `apps/web/src/app/globals.css` (qr scanner video/canvas fit)
 
+## ✅ Latest Progress Update (January 28, 2026 01:04 JST)
+- ✅ Added socket disconnect debounce to prevent brief offline indicator flicker when returning from chat.
+
+### Files Updated (January 28, 2026 01:04 JST)
+- `apps/web/src/hooks/useSocket.ts` (disconnect grace period)
+
 ---
 
 ## 🎯 Issues & Solutions
