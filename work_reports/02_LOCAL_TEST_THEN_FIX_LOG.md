@@ -133,6 +133,24 @@ This document catalogs all critical issues discovered during local test report a
 ### Files Updated (January 28, 2026 00:44 JST)
 - `apps/web/src/components/QRCodeScanner.tsx` (permissionStatus union)
 
+## ✅ Latest Progress Update (January 28, 2026 00:47 JST)
+- ✅ Added Tailwind v4 custom dark variant so class-based dark mode works reliably.
+
+### Files Updated (January 28, 2026 00:47 JST)
+- `apps/web/src/app/globals.css` (custom dark variant)
+
+## ✅ Latest Progress Update (January 28, 2026 00:50 JST)
+- ✅ Improved login page dark mode styling with solid card surface, corrected text colors, and modern button styling.
+
+### Files Updated (January 28, 2026 00:50 JST)
+- `apps/web/src/app/auth/login/page.tsx` (dark mode UI polish)
+
+## ✅ Latest Progress Update (January 28, 2026 00:53 JST)
+- ✅ QR camera preview constrained with overflow hidden and responsive height for cross-device layouts.
+
+### Files Updated (January 28, 2026 00:53 JST)
+- `apps/web/src/components/QRCodeScanner.tsx` (camera preview layout)
+
 ---
 
 ## 🎯 Issues & Solutions

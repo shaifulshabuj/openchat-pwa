@@ -209,8 +209,13 @@ export const QRCodeScanner = ({ onScan }: QRCodeScannerProps) => {
             <DialogTitle>Scan QR code</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2">
-              <div id={regionId} className="w-full h-64" />
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2">
+              <div className="relative w-full overflow-hidden rounded-lg bg-black">
+                <div
+                  id={regionId}
+                  className="w-full h-[240px] sm:h-[320px]"
+                />
+              </div>
             </div>
             {!isCameraReady && (
               <p className="text-xs text-gray-500">Waiting for camera access...</p>
