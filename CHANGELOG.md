@@ -212,3 +212,29 @@ This document summarizes the development progress, deployments, and resolutions 
 - **API Documentation:** https://openchat-pwa-production.up.railway.app/api/docs/ui
 
 **🚀 OpenChat PWA is now ready for beta testing and user feedback with a solid foundation for implementing advanced Phase 3 features!**
+
+---
+
+## 🚀 Version 1.2.0 - Phase 1 UX & Contact Enhancements
+**Date:** January 28, 2026
+
+### ✅ Highlights
+- **Contacts & QR:** Personal QR code, QR scanning via camera, QR paste flow, and request validation.
+- **Messaging UX:** Forward (multi-chat + optional note), reply preview scroll, reaction UX stability.
+- **Theme Reliability:** Class-based dark mode fixed, improved toggle, and hydration-safe theme boot.
+- **Mobile UX:** Safe-area spacing, fixed layout scrolling, and better modal scrolling.
+
+### 🔧 Web UI Improvements
+- Added **camera QR scanner** with permission gating, retry flow, and responsive preview.
+- Improved **chat header/footer spacing** and iOS safe-area handling.
+- Fixed **status flicker** with a socket disconnect debounce.
+- Updated **login dark theme** colors and card surface.
+- Refined **message context menu**, reactions, and send button styling.
+
+### 📦 Backend/API Updates
+- Contacts API now exposes **blocked state** for UI.
+- QR scan flow validates user existence before sending request.
+
+### 🧪 Testing
+- **API tests (docker-compose.test.yml):** 36 passed / 1 skipped  
+  Command: `DATABASE_URL=postgresql://openchat:password@localhost:5433/openchat_test REDIS_URL=redis://localhost:6380 npm --prefix apps/api test -- --run`
