@@ -77,7 +77,7 @@ export default function Home() {
       {/* Mobile Layout - Full Screen */}
       <div className="flex flex-col w-full">
         {/* Header */}
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 pt-[env(safe-area-inset-top)]">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 pt-[calc(env(safe-area-inset-top)+8px)]">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">OpenChat</h1>
@@ -143,7 +143,7 @@ export default function Home() {
         </nav>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-hidden pb-[calc(env(safe-area-inset-bottom)+8px)]">
           {activeTab === 'chats' && (
             <div className="h-full flex flex-col">
               {/* Chat List */}
@@ -215,8 +215,8 @@ export default function Home() {
       </div>
 
       {showContactModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-2xl max-h-[85svh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">
                 Start a conversation
@@ -228,7 +228,9 @@ export default function Home() {
                 Close
               </button>
             </div>
-            <ContactsPanel onClose={() => setShowContactModal(false)} />
+            <div className="flex-1 overflow-y-auto">
+              <ContactsPanel onClose={() => setShowContactModal(false)} />
+            </div>
           </div>
         </div>
       )}

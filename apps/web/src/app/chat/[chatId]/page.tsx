@@ -811,7 +811,7 @@ export default function ChatPage({ params }: ChatPageProps) {
     <div className="flex h-[100svh] overflow-hidden bg-white dark:bg-gray-900">
       <div className="flex flex-col w-full">
         {/* Chat Header */}
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 pt-[env(safe-area-inset-top)]">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 pt-[calc(env(safe-area-inset-top)+8px)]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
@@ -864,7 +864,7 @@ export default function ChatPage({ params }: ChatPageProps) {
         </header>
 
         {/* Messages Area */}
-        <main className="flex-1 overflow-y-auto p-4 space-y-4">
+        <main className="flex-1 overflow-y-auto p-4 pt-5 pb-6 space-y-4">
           {messages.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">
@@ -1011,7 +1011,7 @@ export default function ChatPage({ params }: ChatPageProps) {
         </main>
 
         {/* Message Input */}
-        <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 pb-[env(safe-area-inset-bottom)]">
+        <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 pb-[calc(env(safe-area-inset-bottom)+8px)]">
           {replyToMessage && (
             <div className="mb-3 flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
               <div className="min-w-0">

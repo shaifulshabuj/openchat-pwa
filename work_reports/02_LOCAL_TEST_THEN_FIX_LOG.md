@@ -165,6 +165,24 @@ This document catalogs all critical issues discovered during local test report a
 - `apps/web/src/app/page.tsx` (layout height/overflow)
 - `apps/web/src/app/chat/[chatId]/page.tsx` (layout height/overflow)
 
+## ✅ Latest Progress Update (January 28, 2026 01:31 JST)
+- ✅ Added extra safe-area padding and breathing room for chat header/footer and message list spacing.
+
+### Files Updated (January 28, 2026 01:31 JST)
+- `apps/web/src/app/chat/[chatId]/page.tsx` (header/footer padding + content spacing)
+
+## ✅ Latest Progress Update (January 28, 2026 01:32 JST)
+- ✅ Added safe-area breathing room on home screen header and bottom content area.
+
+### Files Updated (January 28, 2026 01:32 JST)
+- `apps/web/src/app/page.tsx` (header and content safe-area padding)
+
+## ✅ Latest Progress Update (January 28, 2026 01:35 JST)
+- ✅ Contacts modal now scrolls correctly with fixed header and scrollable body.
+
+### Files Updated (January 28, 2026 01:35 JST)
+- `apps/web/src/app/page.tsx` (modal layout and scrolling)
+
 ## ✅ Latest Progress Update (January 28, 2026 01:01 JST)
 - ✅ QR camera preview now uses viewport-relative height and ensures video/canvas fit on iOS.
 
