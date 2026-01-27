@@ -116,7 +116,22 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
     if (trimmed.startsWith('openchat:user:')) {
       const userId = trimmed.replace('openchat:user:', '')
       if (userId) {
-        await handleSendRequest(userId)
+        const candidates = searchResults.filter((result) => result.id === userId)
+        if (candidates.length > 0) {
+          await handleSendRequest(userId)
+          return
+        }
+        const results = await handleSearch(userId)
+        const exactMatch = results.find((result) => result.id === userId)
+        if (exactMatch) {
+          await handleSendRequest(userId)
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'User not found',
+            description: 'No user exists for this QR code.',
+          })
+        }
         return
       }
     }

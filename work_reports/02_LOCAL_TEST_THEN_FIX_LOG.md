@@ -183,6 +183,12 @@ This document catalogs all critical issues discovered during local test report a
 ### Files Updated (January 28, 2026 01:35 JST)
 - `apps/web/src/app/page.tsx` (modal layout and scrolling)
 
+## ✅ Latest Progress Update (January 28, 2026 01:44 JST)
+- ✅ QR scan now verifies user existence via search before sending request, preventing 404.
+
+### Files Updated (January 28, 2026 01:44 JST)
+- `apps/web/src/components/Contacts/ContactsPanel.tsx` (QR scan validation)
+
 ## ✅ Latest Progress Update (January 28, 2026 01:01 JST)
 - ✅ QR camera preview now uses viewport-relative height and ensures video/canvas fit on iOS.
 
