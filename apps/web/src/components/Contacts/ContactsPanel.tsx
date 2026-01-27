@@ -6,6 +6,7 @@ import { Users, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { QRCodeScanner } from '@/components/QRCodeScanner'
+import { ContactQRCode } from '@/components/ContactQRCode'
 import { useAuthStore } from '@/store/auth'
 import { useContactsStore } from '@/store/contacts'
 import { contactsAPI, type ContactRequest, type ContactUser } from '@/services/contacts'
@@ -93,8 +94,17 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
   }
 
   const handleQrScan = async (value: string) => {
-    setQuery(value)
-    await handleSearch(value)
+    const trimmed = value.trim()
+    if (!trimmed) return
+    if (trimmed.startsWith('openchat:user:')) {
+      const userId = trimmed.replace('openchat:user:', '')
+      if (userId) {
+        await handleSendRequest(userId)
+        return
+      }
+    }
+    setQuery(trimmed)
+    await handleSearch(trimmed)
   }
 
   return (
@@ -143,6 +153,12 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
           </div>
         )}
       </div>
+
+      <ContactQRCode
+        userId={user?.id}
+        username={user?.username}
+        displayName={user?.displayName}
+      />
 
       <QRCodeScanner onScan={handleQrScan} />
 
@@ -210,17 +226,28 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
               </p>
               <p className="text-xs text-gray-500">@{contact.user.username}</p>
               <p className="text-xs text-gray-400">Status: {contact.user.status}</p>
+              {contact.isBlocked && (
+                <p className="text-xs font-medium text-red-500">Blocked</p>
+              )}
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => handleStartChat(contact.chatId)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleStartChat(contact.chatId)}
+                disabled={contact.isBlocked}
+              >
                 Start
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => handleBlock(contact.user.id)}>
-                Block
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => handleUnblock(contact.user.id)}>
-                Unblock
-              </Button>
+              {contact.isBlocked ? (
+                <Button size="sm" variant="outline" onClick={() => handleUnblock(contact.user.id)}>
+                  Unblock
+                </Button>
+              ) : (
+                <Button size="sm" variant="ghost" onClick={() => handleBlock(contact.user.id)}>
+                  Block
+                </Button>
+              )}
             </div>
           </div>
         ))}

@@ -25,6 +25,31 @@ This document catalogs all critical issues discovered during local test report a
 - ✅ API tests verified: `npx vitest run` (36 passed / 1 skipped).
 - ⏭️ Next priority: Production build optimization.
 
+## ✅ Latest Progress Update (January 27, 2026 20:15 JST)
+- ✅ Added Phase 1 gap fixes: message forward flow, copy feedback, personal QR code display, and block/unblock UX.
+- ✅ Contacts API now returns `isBlocked` to drive UI state.
+- ✅ Forward dialog lets users pick a chat and sends forwarded message via API with metadata handling.
+- ✅ Reply previews now include smooth scroll + highlight already present from earlier fixes.
+- ⚠️ Tests not re-run (local environment missing dependencies / Node mismatch).
+
+### Files Updated (January 27, 2026 20:15 JST)
+- `apps/api/src/routes/contacts.ts` (include `isBlocked` for contacts)
+- `apps/web/src/services/contacts.ts` (contact type includes `isBlocked`)
+- `apps/web/src/components/Contacts/ContactsPanel.tsx` (QR code card, scan handling, block/unblock UX)
+- `apps/web/src/components/ContactQRCode.tsx` (new personal QR code component)
+- `apps/web/src/components/QRCodeScanner.tsx` (scan instructions and input copy)
+- `apps/web/src/components/MessageContextMenu.tsx` (forward action + copy toast)
+- `apps/web/src/app/chat/[chatId]/page.tsx` (forward dialog + handlers)
+- `apps/web/package.json` (added `qrcode.react` dependency)
+
+## ✅ Latest Progress Update (January 27, 2026 20:42 JST)
+- ✅ Forwarding enhanced: optional note + multi-chat selection.
+- ✅ Forwarded messages now tagged and auto-highlighted on receive.
+- ⚠️ Tests not re-run (local environment missing dependencies / Node mismatch).
+
+### Files Updated (January 27, 2026 20:42 JST)
+- `apps/web/src/app/chat/[chatId]/page.tsx` (forward selection, note, forwarded tag, auto-highlight)
+
 ---
 
 ## 🎯 Issues & Solutions

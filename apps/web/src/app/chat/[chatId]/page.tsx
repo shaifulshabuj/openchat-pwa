@@ -26,6 +26,12 @@ import { MessageContextMenu } from '@/components/MessageContextMenu'
 import { EditMessageDialog } from '@/components/EditMessageDialog'
 import { MessageReadIndicator, type ReadStatus } from '@/components/MessageReadIndicator'
 import { reactionsAPI, messageStatusAPI } from '@/lib/api'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 
@@ -54,6 +60,12 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [openMenuMessageId, setOpenMenuMessageId] = useState<string | null>(null)
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null)
   const highlightTimerRef = useRef<number | null>(null)
+  const [forwardMessage, setForwardMessage] = useState<Message | null>(null)
+  const [forwardChats, setForwardChats] = useState<Chat[]>([])
+  const [forwardQuery, setForwardQuery] = useState('')
+  const [forwardLoading, setForwardLoading] = useState(false)
+  const [forwardNote, setForwardNote] = useState('')
+  const [forwardSelected, setForwardSelected] = useState<Set<string>>(new Set())
 
   const { user } = useAuthStore()
   const { isConnected, on, off, joinChat, sendMessage, startTyping, stopTyping } = useSocket()
@@ -111,6 +123,16 @@ export default function ChatPage({ params }: ChatPageProps) {
       on('new-message', ({ message }: { message: any }) => {
         if (message.chatId === chatId) {
           setMessages((prev) => [...prev, message])
+          const metadata = normalizeMetadata(message.metadata)
+          if (metadata?.forwardedFrom) {
+            setHighlightedMessageId(message.id)
+            if (highlightTimerRef.current) {
+              window.clearTimeout(highlightTimerRef.current)
+            }
+            highlightTimerRef.current = window.setTimeout(() => {
+              setHighlightedMessageId(null)
+            }, 900)
+          }
         }
       })
 
@@ -632,6 +654,124 @@ export default function ChatPage({ params }: ChatPageProps) {
     }
   }
 
+  const getForwardChatDisplayName = (chatItem: Chat) => {
+    if (chatItem.type === 'GROUP' || chatItem.type === 'CHANNEL') {
+      return chatItem.name || 'Group Chat'
+    }
+    const otherUser = chatItem.participants.find((p) => p.user.id !== user?.id)
+    return otherUser?.user.displayName || 'Private Chat'
+  }
+
+  const getForwardChatAvatar = (chatItem: Chat) => {
+    if (chatItem.avatar) return chatItem.avatar
+    if (chatItem.type === 'PRIVATE') {
+      const otherUser = chatItem.participants.find((p) => p.user.id !== user?.id)
+      return otherUser?.user.avatar
+    }
+    return null
+  }
+
+  const normalizeMetadata = (metadata: Message['metadata']) => {
+    if (!metadata) return undefined
+    if (typeof metadata === 'string') {
+      try {
+        return JSON.parse(metadata)
+      } catch {
+        return undefined
+      }
+    }
+    if (typeof metadata === 'object') {
+      return metadata
+    }
+    return undefined
+  }
+
+  useEffect(() => {
+    if (!forwardMessage) return
+    const loadChats = async () => {
+      setForwardLoading(true)
+      try {
+        const response = await chatAPI.getChats()
+        if (response.success) {
+          setForwardChats(response.data)
+        }
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to load chats for forwarding.',
+        })
+      } finally {
+        setForwardLoading(false)
+      }
+    }
+    loadChats()
+  }, [forwardMessage, toast])
+
+  const handleForwardMessage = (messageId: string) => {
+    const message = messages.find((msg) => msg.id === messageId)
+    if (message) {
+      setForwardMessage(message)
+      setForwardQuery('')
+      setForwardNote('')
+      setForwardSelected(new Set())
+    }
+  }
+
+  const toggleForwardSelection = (chatIdValue: string) => {
+    setForwardSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(chatIdValue)) {
+        next.delete(chatIdValue)
+      } else {
+        next.add(chatIdValue)
+      }
+      return next
+    })
+  }
+
+  const handleForwardToSelected = async () => {
+    if (!forwardMessage || forwardSelected.size === 0) return
+    try {
+      const baseMetadata = normalizeMetadata(forwardMessage.metadata) || {}
+      const forwardMeta = {
+        ...baseMetadata,
+        forwardedFrom: {
+          chatId,
+          messageId: forwardMessage.id,
+          senderId: forwardMessage.senderId,
+        },
+      }
+      const targets = Array.from(forwardSelected)
+      await Promise.all(
+        targets.map(async (targetChatId) => {
+          if (forwardNote.trim()) {
+            await chatAPI.sendMessage(targetChatId, {
+              content: forwardNote.trim(),
+            })
+          }
+          await chatAPI.sendMessage(targetChatId, {
+            content: forwardMessage.content,
+            type: forwardMessage.type,
+            replyToId: forwardMeta,
+          })
+        })
+      )
+      toast({
+        variant: 'success',
+        title: 'Message forwarded',
+        description: `Forwarded to ${targets.length} chat${targets.length > 1 ? 's' : ''}.`,
+      })
+      setForwardMessage(null)
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Forward failed',
+        description: 'Unable to forward the message. Please try again.',
+      })
+    }
+  }
+
   const renderFileMessage = (message: any) => {
     const isFile = message.type === 'FILE' || message.content.startsWith('📎')
 
@@ -799,6 +939,19 @@ export default function ChatPage({ params }: ChatPageProps) {
                                 </p>
                               </button>
                             )}
+                            {(() => {
+                              const metadata = normalizeMetadata(message.metadata)
+                              if (!metadata?.forwardedFrom) return null
+                              return (
+                                <p
+                                  className={`mb-1 text-[11px] uppercase tracking-wide ${
+                                    isOwn ? 'text-white/70' : 'text-gray-500 dark:text-gray-300'
+                                  }`}
+                                >
+                                  Forwarded
+                                </p>
+                              )
+                            })()}
                             <p className="text-sm whitespace-pre-wrap">
                               {message.content}
                               {message.isEdited && (
@@ -831,6 +984,7 @@ export default function ChatPage({ params }: ChatPageProps) {
                           onEdit={handleEditMessage}
                           onDelete={handleDeleteMessage}
                           onReply={handleReplyToMessage}
+                          onForward={handleForwardMessage}
                           align={isOwn ? 'start' : 'end'}
                           side={isOwn ? 'left' : 'right'}
                           open={openMenuMessageId === message.id}
@@ -938,6 +1092,94 @@ export default function ChatPage({ params }: ChatPageProps) {
           onClose={() => setEditingMessage(null)}
           onSave={handleSaveEdit}
         />
+
+        <Dialog open={!!forwardMessage} onOpenChange={(open) => !open && setForwardMessage(null)}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Forward message</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Input
+                placeholder="Add a note (optional)..."
+                value={forwardNote}
+                onChange={(event) => setForwardNote(event.target.value)}
+              />
+              <Input
+                placeholder="Search chats..."
+                value={forwardQuery}
+                onChange={(event) => setForwardQuery(event.target.value)}
+              />
+              {forwardLoading && <p className="text-sm text-gray-500">Loading chats...</p>}
+              {!forwardLoading && (
+                <div className="max-h-64 overflow-y-auto space-y-2">
+                  {forwardChats
+                    .filter((chatItem) => chatItem.id !== chatId)
+                    .filter((chatItem) =>
+                      getForwardChatDisplayName(chatItem)
+                        .toLowerCase()
+                        .includes(forwardQuery.trim().toLowerCase())
+                    )
+                    .map((chatItem) => {
+                      const displayName = getForwardChatDisplayName(chatItem)
+                      const avatar = getForwardChatAvatar(chatItem)
+                      const isSelected = forwardSelected.has(chatItem.id)
+                      return (
+                        <button
+                          key={chatItem.id}
+                          onClick={() => toggleForwardSelection(chatItem.id)}
+                          className={`w-full flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/30'
+                              : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                          }`}
+                        >
+                          <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center overflow-hidden">
+                            {avatar ? (
+                              <img src={avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-sm font-semibold text-blue-600 dark:text-blue-300">
+                                {displayName.charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              {displayName}
+                            </p>
+                            {chatItem.type === 'GROUP' && (
+                              <p className="text-xs text-gray-500">
+                                {chatItem.participants.length} members
+                              </p>
+                            )}
+                          </div>
+                          {isSelected && (
+                            <span className="text-xs font-semibold text-blue-600 dark:text-blue-300">
+                              Selected
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  {!forwardLoading &&
+                    forwardChats.filter((chatItem) => chatItem.id !== chatId).length === 0 && (
+                      <p className="text-sm text-gray-500">No chats available.</p>
+                    )}
+                </div>
+              )}
+              <div className="flex items-center justify-between pt-2">
+                <p className="text-xs text-gray-500">
+                  {forwardSelected.size} chat{forwardSelected.size === 1 ? '' : 's'} selected
+                </p>
+                <Button
+                  onClick={handleForwardToSelected}
+                  disabled={forwardSelected.size === 0}
+                >
+                  Forward
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

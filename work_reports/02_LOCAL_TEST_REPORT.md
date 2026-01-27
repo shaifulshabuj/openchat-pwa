@@ -14,6 +14,32 @@
 - ✅ API tests verified: `npx vitest run` (36 passed / 1 skipped).
 - ⏭️ Next priority: Production build optimization.
 
+## ✅ Latest Progress Update (January 27, 2026 19:56 JST)
+- ✅ Ran local API/UI test commands per instructions.
+- ⚠️ API tests failed to start because `vitest` binary is missing (likely dependencies not installed in this environment).
+- ⚠️ Web build failed under Node 14 (`Cannot find module 'node:events'`), indicating Node version mismatch (Next.js 16 requires newer Node).
+
+### Test Commands & Results (January 27, 2026 19:56 JST)
+- `npm --prefix apps/api test` → **FAILED** (`vitest: command not found`)
+- `npm --prefix apps/web run build` → **FAILED** (`Cannot find module 'node:events'` under Node 14)
+
+## ✅ Latest Progress Update (January 27, 2026 20:30 JST)
+- ✅ Dependencies installed with Node 22 via nvm (`pnpm install`).
+- ⚠️ API tests failed due to missing PostgreSQL at `localhost:5432`.
+- ⚠️ Web build failed because Next.js could not fetch Google Fonts (network blocked).
+
+### Test Commands & Results (January 27, 2026 20:30 JST)
+- `pnpm install` → **OK** (warnings about peer deps; Prisma client generated)
+- `npm --prefix apps/api test` → **FAILED** (Prisma `Can't reach database server at localhost:5432`)
+- `npm --prefix apps/web run build` → **FAILED** (Next font fetch `https://fonts.googleapis.com/...`)
+
+## ✅ Latest Progress Update (January 27, 2026 21:30 JST)
+- ✅ API tests executed against docker-compose test services with explicit DB/Redis URLs.
+- ✅ Test result: **36 passed / 1 skipped**.
+
+### Test Commands & Results (January 27, 2026 21:30 JST)
+- `DATABASE_URL=postgresql://openchat:password@localhost:5433/openchat_test REDIS_URL=redis://localhost:6380 npm --prefix apps/api test -- --run` → **PASS** (36 passed / 1 skipped)
+
 ## 🎯 Executive Summary
 
 **Major enhancements completed:**

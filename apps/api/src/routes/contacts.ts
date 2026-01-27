@@ -72,10 +72,19 @@ export default async function contactRoutes(fastify: FastifyInstance) {
         const requestMetadata = requestMessage ? parseContactMetadata(requestMessage.metadata) : null
         const status = requestMetadata?.kind === 'contact-request' ? requestMetadata.status : 'accepted'
 
+        const blockMessage = chat.messages.find((message) => {
+          const metadata = parseContactMetadata(message.metadata)
+          return metadata?.kind === 'contact-block' && metadata.blockerId === userId
+        })
+        const blockMetadata = blockMessage ? parseContactMetadata(blockMessage.metadata) : null
+        const isBlocked =
+          blockMetadata?.kind === 'contact-block' && blockMetadata.status === 'blocked'
+
         return {
           chatId: chat.id,
           user: contact.user,
-          status
+          status,
+          isBlocked
         }
       })
       .filter(Boolean)
