@@ -16,7 +16,7 @@ export const QRCodeScanner = ({ onScan }: QRCodeScannerProps) => {
   const { toast } = useToast()
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [isCameraReady, setIsCameraReady] = useState(false)
-  const [permissionStatus, setPermissionStatus] = useState<'unknown' | 'granted' | 'denied'>('unknown')
+  const [permissionStatus, setPermissionStatus] = useState<'unknown' | 'granted' | 'denied' | 'prompt'>('unknown')
   const scannerRef = useRef<any>(null)
   const regionId = 'qr-scanner-region'
   const permissionKey = 'openchat_camera_permission'

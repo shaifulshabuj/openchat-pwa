@@ -127,6 +127,12 @@ This document catalogs all critical issues discovered during local test report a
 ### Files Updated (January 28, 2026 00:38 JST)
 - `apps/web/src/components/QRCodeScanner.tsx` (wait for region before start)
 
+## ✅ Latest Progress Update (January 28, 2026 00:44 JST)
+- ✅ Fixed TypeScript permission state typing to include `prompt`.
+
+### Files Updated (January 28, 2026 00:44 JST)
+- `apps/web/src/components/QRCodeScanner.tsx` (permissionStatus union)
+
 ---
 
 ## 🎯 Issues & Solutions
