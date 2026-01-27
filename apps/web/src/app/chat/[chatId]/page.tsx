@@ -808,10 +808,10 @@ export default function ChatPage({ params }: ChatPageProps) {
   }
 
   return (
-    <div className="flex h-screen bg-white dark:bg-gray-900">
+    <div className="flex min-h-[100svh] bg-white dark:bg-gray-900">
       <div className="flex flex-col w-full">
         {/* Chat Header */}
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
@@ -1011,7 +1011,7 @@ export default function ChatPage({ params }: ChatPageProps) {
         </main>
 
         {/* Message Input */}
-        <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+        <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 pb-[env(safe-area-inset-bottom)]">
           {replyToMessage && (
             <div className="mb-3 flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
               <div className="min-w-0">

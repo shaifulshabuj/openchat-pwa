@@ -151,6 +151,20 @@ This document catalogs all critical issues discovered during local test report a
 ### Files Updated (January 28, 2026 00:53 JST)
 - `apps/web/src/components/QRCodeScanner.tsx` (camera preview layout)
 
+## ✅ Latest Progress Update (January 28, 2026 00:58 JST)
+- ✅ Added safe-area padding for iOS devices and switched to `100svh` to avoid clipped headers/footers.
+
+### Files Updated (January 28, 2026 00:58 JST)
+- `apps/web/src/app/page.tsx` (safe-area header + svh)
+- `apps/web/src/app/chat/[chatId]/page.tsx` (safe-area header/footer + svh)
+
+## ✅ Latest Progress Update (January 28, 2026 01:01 JST)
+- ✅ QR camera preview now uses viewport-relative height and ensures video/canvas fit on iOS.
+
+### Files Updated (January 28, 2026 01:01 JST)
+- `apps/web/src/components/QRCodeScanner.tsx` (responsive height)
+- `apps/web/src/app/globals.css` (qr scanner video/canvas fit)
+
 ---
 
 ## 🎯 Issues & Solutions

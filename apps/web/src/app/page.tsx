@@ -73,11 +73,11 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen bg-white dark:bg-gray-900">
+    <div className="flex min-h-[100svh] bg-white dark:bg-gray-900">
       {/* Mobile Layout - Full Screen */}
       <div className="flex flex-col w-full">
         {/* Header */}
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">OpenChat</h1>

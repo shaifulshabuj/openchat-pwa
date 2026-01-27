@@ -213,7 +213,7 @@ export const QRCodeScanner = ({ onScan }: QRCodeScannerProps) => {
               <div className="relative w-full overflow-hidden rounded-lg bg-black">
                 <div
                   id={regionId}
-                  className="w-full h-[240px] sm:h-[320px]"
+                  className="qr-scanner-region w-full h-[60svh] max-h-[420px] sm:h-[360px]"
                 />
               </div>
             </div>
