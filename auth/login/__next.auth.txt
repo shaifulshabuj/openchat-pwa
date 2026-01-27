@@ -1,0 +1,4 @@
+1:"$Sreact.fragment"
+2:I[84985,["/openchat-pwa-dev/_next/static/chunks/61d8ccffd71ae51e.js","/openchat-pwa-dev/_next/static/chunks/383f75f325d23f19.js"],"default"]
+3:I[63724,["/openchat-pwa-dev/_next/static/chunks/61d8ccffd71ae51e.js","/openchat-pwa-dev/_next/static/chunks/383f75f325d23f19.js"],"default"]
+0:{"buildId":"bYjkfuRCGHX3o3nIalRDq","rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"loading":null,"isPartial":false}

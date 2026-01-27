@@ -1,0 +1,16 @@
+<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="144" height="144" rx="32" fill="url(#grad)"/>
+  <g transform="translate(36, 36)">
+    <path d="M36 44C36 48.4183 32.4183 52 28 52C23.5817 52 20 48.4183 20 44C20 39.5817 23.5817 36 28 36C32.4183 36 36 39.5817 36 44Z" fill="white"/>
+    <path d="M52 44C52 48.4183 48.4183 52 44 52C39.5817 52 36 48.4183 36 44C36 39.5817 39.5817 36 44 36C48.4183 36 52 39.5817 52 44Z" fill="white"/>
+    <path d="M68 44C68 48.4183 64.4183 52 60 52C55.5817 52 52 48.4183 52 44C52 39.5817 55.5817 36 60 36C64.4183 36 68 39.5817 68 44Z" fill="white"/>
+    <rect x="16" y="16" width="56" height="24" rx="12" fill="white" fill-opacity="0.9"/>
+    <text x="44" y="32" text-anchor="middle" fill="#10b981" font-family="Arial, sans-serif" font-size="14" font-weight="bold">OpenChat</text>
+  </g>
+</svg>
