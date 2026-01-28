@@ -273,9 +273,16 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
             className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
           >
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {contact.user.displayName}
-              </p>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`h-2.5 w-2.5 rounded-full ${
+                    contact.user.status === 'ONLINE' ? 'bg-green-500' : 'bg-gray-400'
+                  }`}
+                />
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {contact.user.displayName}
+                </p>
+              </div>
               <p className="text-xs text-gray-500">@{contact.user.username}</p>
               <p className="text-xs text-gray-400">Status: {contact.user.status}</p>
               {contact.isBlocked && (

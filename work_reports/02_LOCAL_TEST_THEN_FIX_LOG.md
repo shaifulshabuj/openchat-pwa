@@ -207,6 +207,19 @@ This document catalogs all critical issues discovered during local test report a
 ### Files Updated (January 28, 2026 14:42 JST)
 - `apps/web/src/app/chat/[chatId]/page.tsx` (auto-scroll guard)
 
+## ✅ Latest Progress Update (January 28, 2026 15:40 JST)
+- ✅ Contact list now shows an online status dot (green for ONLINE, gray otherwise).
+
+### Files Updated (January 28, 2026 15:40 JST)
+- `apps/web/src/components/Contacts/ContactsPanel.tsx` (online indicator)
+
+## ✅ Latest Progress Update (January 28, 2026 15:47 JST)
+- ✅ Socket connection now persists across page transitions to avoid brief disconnect flicker.
+- ✅ Added a short disconnect grace period when no subscribers to keep status green while navigating.
+
+### Files Updated (January 28, 2026 15:47 JST)
+- `apps/web/src/hooks/useSocket.ts` (shared socket + disconnect grace)
+
 ## ✅ Latest Progress Update (January 28, 2026 01:01 JST)
 - ✅ QR camera preview now uses viewport-relative height and ensures video/canvas fit on iOS.
 
