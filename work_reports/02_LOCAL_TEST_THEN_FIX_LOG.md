@@ -220,6 +220,12 @@ This document catalogs all critical issues discovered during local test report a
 ### Files Updated (January 28, 2026 15:47 JST)
 - `apps/web/src/hooks/useSocket.ts` (shared socket + disconnect grace)
 
+## ✅ Latest Progress Update (January 28, 2026 15:53 JST)
+- ✅ Cleared pending disconnect timer on new subscriber mount and force reconnect when shared socket is disconnected.
+
+### Files Updated (January 28, 2026 15:53 JST)
+- `apps/web/src/hooks/useSocket.ts` (cancel disconnect timer + reconnect)
+
 ## ✅ Latest Progress Update (January 28, 2026 01:01 JST)
 - ✅ QR camera preview now uses viewport-relative height and ensures video/canvas fit on iOS.
 

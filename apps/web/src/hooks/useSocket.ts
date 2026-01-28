@@ -42,6 +42,11 @@ export const useSocket = () => {
     // Connect to socket
     const socketURL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:8001'
     
+    if (disconnectTimer) {
+      window.clearTimeout(disconnectTimer)
+      disconnectTimer = null
+    }
+
     if (!sharedSocket) {
       sharedSocket = io(socketURL, {
         auth: {
@@ -53,6 +58,9 @@ export const useSocket = () => {
 
     sharedSubscribers += 1
     socketRef.current = sharedSocket
+    if (!sharedSocket.connected) {
+      sharedSocket.connect()
+    }
     setIsConnected(sharedSocket.connected)
 
     // Connection event handlers
