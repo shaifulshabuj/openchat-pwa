@@ -56,6 +56,8 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [unreadMessages, setUnreadMessages] = useState<Set<string>>(new Set())
   const [participantStatuses, setParticipantStatuses] = useState<Record<string, string>>({})
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null)
+  const lastMessageIdRef = useRef<string | null>(null)
   const longPressTimerRef = useRef<number | null>(null)
   const [openMenuMessageId, setOpenMenuMessageId] = useState<string | null>(null)
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null)
@@ -346,7 +348,11 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   useEffect(() => {
     if (!messagesEndRef.current) return
-    messagesEndRef.current.scrollIntoView({ behavior: 'auto' })
+    const lastMessageId = messages[messages.length - 1]?.id || null
+    if (lastMessageId && lastMessageId !== lastMessageIdRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'auto' })
+      lastMessageIdRef.current = lastMessageId
+    }
   }, [messages])
 
   const startLongPress = (messageId: string) => {
@@ -864,7 +870,10 @@ export default function ChatPage({ params }: ChatPageProps) {
         </header>
 
         {/* Messages Area */}
-        <main className="flex-1 overflow-y-auto p-4 pt-5 pb-6 space-y-4">
+        <main
+          ref={messagesContainerRef}
+          className="flex-1 overflow-y-auto p-4 pt-5 pb-6 space-y-4"
+        >
           {messages.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">

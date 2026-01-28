@@ -201,6 +201,12 @@ This document catalogs all critical issues discovered during local test report a
 ### Files Updated (January 28, 2026 01:59 JST)
 - `apps/web/src/components/Contacts/ContactsPanel.tsx` (search filtering + request state)
 
+## ✅ Latest Progress Update (January 28, 2026 14:42 JST)
+- ✅ Prevented auto-scroll on reaction updates by only scrolling when a new message is appended.
+
+### Files Updated (January 28, 2026 14:42 JST)
+- `apps/web/src/app/chat/[chatId]/page.tsx` (auto-scroll guard)
+
 ## ✅ Latest Progress Update (January 28, 2026 01:01 JST)
 - ✅ QR camera preview now uses viewport-relative height and ensures video/canvas fit on iOS.
 
