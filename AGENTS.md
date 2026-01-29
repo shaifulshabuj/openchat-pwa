@@ -31,3 +31,11 @@ Recent commits follow Conventional Commit prefixes (`feat:`, `fix:`, `docs:`, `c
 
 ## Security & Configuration Tips
 Local env setup uses example files: `apps/web/.env.example` → `apps/web/.env.local`, `apps/api/.env.example` → `apps/api/.env`. Do not commit secrets; use `.env` files and `docker-compose.yml` defaults for local dev.
+
+## Codex Skills (Use in Future Sessions)
+The following OpenChat skills were added for repeatable workflows. If a request matches one of these, use the skill first.
+
+- `.codex/skills/SKILL.md`: Master mapper to pick the right OpenChat skill.
+- `.codex/skills/openchat-docker-local-testing/SKILL.md`: Docker-based local testing setup, compose/Dockerfile troubleshooting, and Docker testing docs.
+- `.codex/skills/openchat-playwright-ui-testing/SKILL.md`: UI-level test flows with Playwright MCP and local test reporting.
+- `.codex/skills/openchat-spec-progress-logging/SKILL.md`: Spec-driven progress tracking, checklist updates, and fix logs.
