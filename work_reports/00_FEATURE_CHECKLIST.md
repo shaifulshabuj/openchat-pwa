@@ -1,7 +1,7 @@
 # 🧾 **OpenChat PWA - Feature Checklist (Spec vs Implementation)**
 
 Source: `work_reports/00_SPECIFICATION_OPENCHAT_PWA.md`
-Status baseline: `work_reports/01_PROJECT_STATUS.md` (latest updates through Jan 30, 2026)
+Status baseline: `work_reports/01_PROJECT_STATUS.md` (latest updates through Jan 29, 2026)
 
 Legend: ✅ Working | ⚠️ Partial | ❌ Not implemented | — Not reported
 
@@ -30,7 +30,7 @@ Legend: ✅ Working | ⚠️ Partial | ❌ Not implemented | — Not reported
 | Emoji support (native + custom) | ✅ | ✅ | ✅ Working (native) | Custom emoji not reported | [x] |
 | Message status (sent, delivered, read) | ✅ | ✅ | ✅ Working |  | [x] |
 | Typing indicators | ✅ | ✅ | ✅ Working (Socket.io) |  | [x] |
-| Online/offline status | ✅ | ✅ | ✅ Working (presence unreliable in prod) | Presence reliability issues noted | [x] |
+| Online/offline status | ✅ | ⚠️ | ⚠️ Partial | Presence flicker/disconnect persists in some flows | [ ] |
 | Last seen timestamp | ✅ | ✅ | ✅ Working |  | [x] |
 | Message editing (within 5 minutes) | ✅ | ⚠️ | ⚠️ Partial | Implemented with 24h limit | [ ] |
 | Message deletion (for everyone/just me) | ✅ | ⚠️ | ⚠️ Partial | Soft delete only; scope not specified | [ ] |
@@ -64,7 +64,7 @@ Legend: ✅ Working | ⚠️ Partial | ❌ Not implemented | — Not reported
 
 | Feature | Spec | Implementation | Status | Gap | Checklist |
 | --- | --- | --- | --- | --- | --- |
-| Add contacts by username/phone/email | ✅ | ⚠️ | ⚠️ Partial | Username/email search only; phone not reported | [ ] |
+| Add contacts by username/phone/email | ✅ | ⚠️ | ⚠️ Partial | Username/email search + QR supported; phone not implemented | [ ] |
 | QR code scanning to add contacts | ✅ | ✅ | ✅ Working |  | [x] |
 | Personal QR code generation | ✅ | ✅ | ✅ Working |  | [x] |
 | Contact requests (send/accept/decline) | ✅ | ✅ | ✅ Working |  | [x] |
@@ -207,4 +207,3 @@ Legend: ✅ Working | ⚠️ Partial | ❌ Not implemented | — Not reported
 | Task management integration | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
 | Calendar integration | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
 | Translation bot | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
-

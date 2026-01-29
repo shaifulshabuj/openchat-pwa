@@ -239,6 +239,26 @@ This document catalogs all critical issues discovered during local test report a
 ### Files Updated (January 28, 2026 01:04 JST)
 - `apps/web/src/hooks/useSocket.ts` (disconnect grace period)
 
+## ✅ Latest Progress Update (January 29, 2026 23:45 JST)
+- ✅ Docker-based local testing images created for API/Web with local compose, plus build/run docs.
+- ✅ QR add flow now supports `openchat:user:` IDs directly and no longer misreports existing users as missing.
+- ✅ Forwarded messages fixed end-to-end (metadata send + API stringification) and re-verified in Docker.
+- ✅ Chat last-read and edited display issues fixed (user-scoped read key; avoid duplicate “(edited)”).
+- ✅ Manifest icons/scope updated to avoid local 404s in dev builds.
+
+### Files Updated (January 29, 2026 23:45 JST)
+- `.dockerignore` (exclude node_modules/.next/dist for Docker builds)
+- `docker/apiTest.Dockerfile` (local API testing image)
+- `docker/webTest.Dockerfile` (local web testing image)
+- `docker-compose.local-test.yml` (local test stack)
+- `docs/DOCKER_BASED_LOCAL_TESTING_DOC.md` (Docker testing instructions)
+- `apps/web/src/components/Contacts/ContactsPanel.tsx` (QR add flow fixes)
+- `apps/web/src/lib/api.ts` (send metadata for forward)
+- `apps/api/src/routes/chats.ts` (stringify metadata)
+- `apps/web/src/app/chat/[chatId]/page.tsx` (forward metadata + edited label guard)
+- `apps/web/src/components/ChatList.tsx` (user-scoped read key)
+- `apps/web/public/manifest.json` (local icon paths + scope)
+
 ---
 
 ## 🎯 Issues & Solutions

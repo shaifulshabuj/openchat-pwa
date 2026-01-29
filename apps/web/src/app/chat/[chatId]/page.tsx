@@ -334,8 +334,8 @@ export default function ChatPage({ params }: ChatPageProps) {
             ? message
             : latest
         }, null as Message | null)
-        if (latestMessage) {
-          localStorage.setItem(`chat_read_${chatId}`, latestMessage.createdAt)
+        if (latestMessage && user?.id) {
+          localStorage.setItem(`chat_read_${chatId}_${user.id}`, latestMessage.createdAt)
         }
         setUnreadMessages(new Set())
       } catch (error) {
@@ -758,8 +758,8 @@ export default function ChatPage({ params }: ChatPageProps) {
           }
           await chatAPI.sendMessage(targetChatId, {
             content: forwardMessage.content,
-            type: forwardMessage.type,
-            replyToId: forwardMeta,
+            type: forwardMessage.type || 'TEXT',
+            metadata: forwardMeta,
           })
         })
       )
@@ -963,9 +963,13 @@ export default function ChatPage({ params }: ChatPageProps) {
                             })()}
                             <p className="text-sm whitespace-pre-wrap">
                               {message.content}
-                              {message.isEdited && (
-                                <span className="text-xs opacity-70 ml-2">(edited)</span>
-                              )}
+                              {(() => {
+                                const content = message.content || ''
+                                const endsWithEdited = /\(edited\)\s*$/i.test(content)
+                                return message.isEdited && !endsWithEdited ? (
+                                  <span className="text-xs opacity-70 ml-2">(edited)</span>
+                                ) : null
+                              })()}
                             </p>
                           </>
                         )}

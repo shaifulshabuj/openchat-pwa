@@ -81,7 +81,9 @@ export function ChatList() {
       return 0
     }
 
-    const lastReadAt = localStorage.getItem(`chat_read_${chat.id}`)
+    const lastReadAt = user?.id
+      ? localStorage.getItem(`chat_read_${chat.id}_${user.id}`)
+      : null
     if (lastReadAt) {
       const lastReadTime = new Date(lastReadAt).getTime()
       const lastMessageTime = new Date(chat.lastMessage.createdAt).getTime()

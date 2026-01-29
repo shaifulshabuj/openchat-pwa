@@ -188,6 +188,7 @@ export const chatAPI = {
     content: string
     type?: string
     replyToId?: string
+    metadata?: Record<string, any>
   }): Promise<{ success: boolean; data: Message }> {
     const response = await api.post(`/api/chats/${chatId}/messages`, data)
     return response.data

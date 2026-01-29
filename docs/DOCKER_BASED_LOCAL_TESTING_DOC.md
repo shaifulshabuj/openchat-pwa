@@ -1,0 +1,81 @@
+# Docker-Based Local Testing
+
+This guide runs the API + Web in Docker using the test Postgres/Redis services and the test Dockerfiles.
+
+## Prerequisites
+- Docker Desktop (or Docker Engine) running locally.
+- Ports free: `3000`, `8080`, `5433`, `6380`.
+
+## 1) Start test databases (Postgres + Redis)
+From the repo root:
+
+```bash
+docker compose -f docker-compose.test.yml up -d
+```
+
+This starts:
+- Postgres on `localhost:5433`
+- Redis on `localhost:6380`
+
+## 2) Build and run API + Web using Docker (test Dockerfiles)
+
+```bash
+docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml up --build -d
+```
+
+Dockerfiles used:
+- `docker/apiTest.Dockerfile`
+- `docker/webTest.Dockerfile`
+
+Services:
+- API: `http://localhost:8080`
+- Web: `http://localhost:3000`
+
+## 3) Run API tests inside the container
+
+```bash
+docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml exec api npm test
+```
+
+## 4) Run lint/type-check/build inside containers (optional)
+
+```bash
+# API
+docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml exec api npm run lint
+docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml exec api npm run type-check
+
+# Web
+docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml exec web npm run lint
+docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml exec web npm run type-check
+docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml exec web npm run build
+```
+
+## 5) Stop containers
+
+```bash
+docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml down
+```
+
+## Troubleshooting
+
+### Build fails copying node_modules
+If you see errors like “cannot replace ... node_modules ... with file”, ensure `.dockerignore` excludes `node_modules` and rebuild:
+
+```bash
+docker builder prune -f
+docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml up --build -d
+```
+
+### npm ERESOLVE / peer dependency conflicts
+The web Dockerfiles use `npm install --legacy-peer-deps` to bypass peer conflicts (React 19 vs older peer ranges).
+If you still see ERESOLVE errors, rebuild with a clean cache:
+
+```bash
+docker builder prune -f
+docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml up --build -d
+```
+
+## Notes
+- The API container uses `DATABASE_URL` and `REDIS_URL` pointing to the test services.
+- The Web container uses `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_SOCKET_URL` pointing to `localhost:8080`.
+- If Docker socket permissions fail, ensure Docker Desktop is running and your user has access.

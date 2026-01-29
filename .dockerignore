@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+**/dist
+logs
+.git
+.gitignore
+.DS_Store
+npm-debug.log
+pnpm-debug.log

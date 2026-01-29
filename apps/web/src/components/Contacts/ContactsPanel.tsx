@@ -84,10 +84,15 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
     }
   }
 
+  const sendRequest = async (userId: string) => {
+    const response = await contactsAPI.sendRequest(userId)
+    await refreshAll()
+    return response
+  }
+
   const handleSendRequest = async (userId: string) => {
     try {
-      await contactsAPI.sendRequest(userId)
-      await refreshAll()
+      await sendRequest(userId)
       toast({
         variant: 'success',
         title: 'Request sent',
@@ -125,25 +130,82 @@ export const ContactsPanel = ({ onClose }: ContactsPanelProps) => {
   const handleQrScan = async (value: string) => {
     const trimmed = value.trim()
     if (!trimmed) return
+
     if (trimmed.startsWith('openchat:user:')) {
-      const userId = trimmed.replace('openchat:user:', '')
-      if (userId) {
+      const token = trimmed.replace('openchat:user:', '').trim()
+      if (!token) return
+
+      if (contactIds.has(token)) {
+        toast({
+          title: 'Already in contacts',
+          description: 'This user is already in your contacts.',
+        })
+        return
+      }
+
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)
+
+      if (isUuid) {
         try {
-          await handleSendRequest(userId)
-        } catch (error) {
-          // If sending fails (e.g. user not found), fall back to search feedback.
-          const results = await handleSearch(userId)
-          if (!results.length) {
+          await sendRequest(token)
+          toast({
+            variant: 'success',
+            title: 'Request sent',
+            description: 'Contact request sent successfully.',
+          })
+        } catch (error: any) {
+          const status = error?.response?.status
+          if (status === 404) {
             toast({
               variant: 'destructive',
               title: 'User not found',
               description: 'No user exists for this QR code.',
             })
+          } else {
+            toast({
+              variant: 'destructive',
+              title: 'Request failed',
+              description: error?.message || 'Unable to send request.',
+            })
           }
         }
         return
       }
+
+      try {
+        const response = await contactsAPI.searchUsers(token)
+        const candidate = response.data.find((result) => result.id !== user?.id)
+        if (!candidate) {
+          toast({
+            variant: 'destructive',
+            title: 'User not found',
+            description: 'No user exists for this QR code.',
+          })
+          return
+        }
+        if (contactIds.has(candidate.id)) {
+          toast({
+            title: 'Already in contacts',
+            description: `${candidate.displayName} is already in your contacts.`,
+          })
+          return
+        }
+        await sendRequest(candidate.id)
+        toast({
+          variant: 'success',
+          title: 'Request sent',
+          description: 'Contact request sent successfully.',
+        })
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Request failed',
+          description: error?.message || 'Unable to send request.',
+        })
+      }
+      return
     }
+
     setQuery(trimmed)
     const results = await handleSearch(trimmed)
     if (!results.length) {

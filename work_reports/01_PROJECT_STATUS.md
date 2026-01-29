@@ -1,6 +1,6 @@
 # 📊 **OpenChat PWA - Project Status Report**
 
-**Report Date:** January 26, 2026  
+**Report Date:** January 29, 2026  
 **Repository:** https://github.com/shaifulshabuj/openchat-pwa  
 **Deployed:** https://shaifulshabuj.github.io/openchat-pwa  
 **Latest Review:** `.github/reviews/01_review.md`
@@ -18,6 +18,115 @@
 - ✅ Phase 1 gaps addressed: forward (multi‑chat + optional note), copy feedback, personal QR code card, and block/unblock UX.
 - ✅ Forwarded messages now tag “Forwarded” and briefly highlight on receive.
 - ⚠️ Local tests not re-run due to missing dependencies / Node 14 environment (Next 16 requires Node 20+).
+
+## ✅ **Latest Progress Update (January 28, 2026)**
+- ✅ Contacts UX: camera-based QR scan, permission handling with retry, QR validation before request, and outgoing request state in search.
+- ✅ Chat UX: reply jump highlight, forward with optional note + multi-chat selection, reactions no longer auto-scroll.
+- ✅ UI polish: improved login dark theme, toast error surfaces, and modal scrolling.
+- ✅ Mobile UX: safe-area padding + `100svh` layouts to prevent clipped headers/footers.
+- ✅ Theme reliability: class-based dark mode fixed with Tailwind v4 custom variant; hydration-safe theme boot.
+- ✅ Socket UX: shared socket + disconnect grace to reduce status flicker.
+- ✅ Contact list now shows online status dot.
+- ✅ API tests pass against docker-compose.test.yml: 36 passed / 1 skipped.
+
+## ✅ **Latest Progress Update (January 29, 2026)**
+- ✅ Deployed app reachable on GitHub Pages (`/` and `/manifest.json` return 200).
+- ⚠️ Full interactive spec validation requires browser walkthrough (not possible via CLI).
+- ✅ Local API tests still passing against docker-compose.test.yml (last run: 36 passed / 1 skipped).
+
+## ✅ **Latest Progress Update (January 29, 2026 - Playwright)**
+- ✅ Ran Playwright against deployed app for spec validation walkthrough.
+- ✅ Created new users for validation:
+  - User C: `test+userc0129@example.com` / `userc0129`
+  - User D: `test+userd0129@example.com` / `userd0129`
+- ✅ Contact request flow verified (User D → User C), accept, and start chat.
+- ✅ One-on-one chat verified: send/receive text messages.
+- ✅ Reactions verified (👍 on a message).
+- ⚠️ Online status still showed OFFLINE for other user while active (socket presence not fully reliable).
+- ✅ Reply, copy, forward dialog, edit/delete flows validated (see notes below).
+- ⚠️ QR scan input returned 404 from `/api/contacts/request`.
+- ⚠️ Edited message label rendered as “(edited)(edited)”.
+
+## ✅ **Latest Progress Update (January 29, 2026 - Fixes)**
+- ✅ QR scan now falls back to username search when QR payload is not a UUID (prevents 404 dead-end).
+- ✅ Unread badge now uses user-scoped localStorage keys to avoid cross-user suppression.
+- ⚠️ `pnpm lint` blocked by Node v14.13.1 (pnpm requires Node >= 18.12).
+
+## ✅ **Latest Progress Update (January 29, 2026 - Docker Testing)**
+- ✅ Added `docker-compose.local-test.yml` to run API/Web against test Postgres + Redis.
+- ✅ Added `docs/DOCKER_BASED_LOCAL_TESTING_DOC.md` with Docker-based test workflow.
+- ⚠️ Docker socket permission blocked local container checks (needs Docker Desktop running).
+
+## ✅ **Latest Progress Update (January 30, 2026 - Docker Test Dockerfiles)**
+- ✅ Added `docker/apiTest.Dockerfile` and `docker/webTest.Dockerfile` for local testing builds.
+- ✅ `docker-compose.local-test.yml` now uses the test Dockerfiles.
+- ✅ Docker testing documentation updated to reference test Dockerfiles.
+- ⚠️ Docker socket permission still blocks local container verification.
+
+## ✅ **Latest Progress Update (January 30, 2026 - Docker Build Fix)**
+- ✅ Added `.dockerignore` to exclude `node_modules`/build artifacts from Docker context.
+- ✅ Updated Docker testing doc with rebuild instructions for node_modules copy errors.
+
+## ✅ **Latest Progress Update (January 30, 2026 - Docker Web Fix)**
+- ✅ Fixed web Dockerfiles to avoid overwriting `apps/web/package.json` (prevents `next: not found`).
+
+## ✅ **Latest Progress Update (January 30, 2026 - Docker ERESOLVE Fix)**
+- ✅ Web Dockerfiles now use `npm install --legacy-peer-deps` to avoid React 19 peer conflicts.
+
+## ✅ **Latest Progress Update (January 30, 2026 - Docker Localhost Testing)**
+- ✅ Ran spec validation against `http://localhost:3000` (Docker-based local deployment).
+- ✅ Contact request flow + chat send verified; unread badge visible for recipient.
+- ⚠️ QR paste scan still reported “User not found” for `openchat:user:<username>` when contact already exists.
+- ✅ Implemented QR scan fix to resolve username/email tokens and show “Already in contacts”.
+- ⚠️ Local dev showed missing icon at `/openchat-pwa/icons/icon-144x144.png` (base path mismatch in dev).
+
+## ✅ **Latest Progress Update (January 30, 2026 - Docker Localhost Retest)**
+- ✅ QR scan with `openchat:user:<username>` now reports “Already in contacts”.
+- ✅ Reactions, reply, copy, delete, block/unblock confirmed in local Docker session.
+- ✅ Unread badge appears on login for recipient user.
+- ⚠️ Edited message label still doubles when user includes “(edited)” in content.
+- ⚠️ Local dev still logs missing icon at `/openchat-pwa/icons/icon-144x144.png`.
+
+## ✅ **Latest Progress Update (January 30, 2026 - Observations Fixed)**
+- ✅ Suppressed duplicate edited tag when content already ends with “(edited)”.
+- ✅ Manifest icon paths now relative to avoid `/openchat-pwa` icon 404s in local dev.
+
+## ✅ **Latest Progress Update (January 30, 2026 - Forward Fix)**
+- ✅ Forwarding now sends metadata correctly (no longer passes object as `replyToId`).
+- ✅ Forwarded message type defaults to `TEXT` when missing.
+
+## ✅ **Latest Progress Update (January 30, 2026 - Forward API Fix)**
+- ✅ API now stringifies message metadata before storing (matches Prisma `metadata` string type).
+- ⚠️ Requires API container rebuild to verify forwarded message delivery.
+
+## ✅ **Latest Progress Update (January 30, 2026 - Forward Retest)**
+- ✅ Forwarding now works end-to-end after API rebuild (note + forwarded content + success toast).
+
+## 🧪 **Local Test: Spec Validation (Playwright)**
+**Date:** January 29, 2026  
+**Scope:** Deployed UI walkthrough against spec for core MVP.  
+**Results:**
+- ✅ `https://shaifulshabuj.github.io/openchat-pwa/` → 200 OK
+- ✅ `https://shaifulshabuj.github.io/openchat-pwa/manifest.json` → 200 OK
+- ✅ Registration + login working for newly created users.
+- ⚠️ Demo login (`alice@openchat.dev`) failed with 401 (likely not seeded in prod).
+- ✅ Contacts: search + request + accept verified (User D → User C).
+- ✅ Chat: conversation creation, send/receive text messages verified.
+- ✅ Reactions: add 👍 reaction verified.
+- ✅ Reply: reply chip, send reply, jump-to-original verified.
+- ✅ Copy: copy toast shown for message.
+- ✅ Forward: dialog opens (no secondary chats available to complete forward).
+- ✅ Edit/Delete: delete works and shows “[Message deleted]”; edit works but shows duplicate edited tag.
+- ⚠️ Presence: other user displayed OFFLINE while active (socket presence gap).
+- ⚠️ QR scan input (paste) returned 404 error from `/api/contacts/request`.
+- ⚠️ QR camera scan not validated in Playwright (no camera available).
+- ⚠️ PWA install/offline, OAuth, OTP, 2FA, password reset not validated.
+
+## 🧭 **Next Steps (Priority)**
+1. Fix QR scan input 404 (`/api/contacts/request`) in production build.
+2. Fix duplicate “(edited)” label on edited messages.
+3. Validate unread badge rendering in chat list (not visible in Playwright run).
+4. Validate PWA install/offline behavior and push notification flows.
 
 ## 🎯 **Executive Summary**
 

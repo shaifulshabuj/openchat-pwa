@@ -517,3 +517,219 @@ The latest changes represent **MAJOR IMPROVEMENTS** and **ALL CRITICAL ISSUES RE
 **Recommendation:** **FIX ISSUES FIRST, THEN COMMIT** 🔧
 
 **ETA to Green:** **15-20 minutes** ⏱️
+
+---
+
+## 🧪 Playwright Spec Validation - 2026-01-29 22:59 JST
+
+**Target:** https://shaifulshabuj.github.io/openchat-pwa
+
+**Accounts created for testing:**
+- User C: `test+userc0129@example.com` / `userc0129`
+- User D: `test+userd0129@example.com` / `userd0129`
+
+**Flow coverage:**
+- ✅ Registration + login for new users
+- ✅ Contact search, request, accept, and start chat
+- ✅ Send/receive messages
+- ✅ Emoji reactions (👍)
+- ⚠️ Presence shows OFFLINE for other active user
+- ⚠️ QR camera scan not tested (no camera in Playwright)
+- ⚠️ PWA offline/install, OAuth/OTP/2FA/password reset not tested
+
+**Notes:**
+- Demo login (`alice@openchat.dev`) failed with 401 (likely not seeded in prod).
+
+---
+
+## 🧪 Playwright Spec Validation - 2026-01-29 23:29 JST
+
+**Target:** https://shaifulshabuj.github.io/openchat-pwa
+
+**Additional flows validated:**
+- ✅ Reply flow: reply chip, send reply, jump-to-original.
+- ✅ Copy flow: toast shown.
+- ✅ Forward dialog opens (no second chat available to complete send).
+- ✅ Delete message: shows “[Message deleted]”.
+- ⚠️ Edit message: saved edit shows “(edited)(edited)” (duplicate tag).
+- ✅ Block/unblock contact from contacts list.
+- ⚠️ QR scan input (paste) failed with 404 from `/api/contacts/request`.
+- ⚠️ Unread badge/counter not visibly rendered in chat list (message preview updated).
+
+**Accounts used:**
+- User C: `test+userc0129@example.com` / `userc0129`
+- User D: `test+userd0129@example.com` / `userd0129`
+
+---
+
+## 🛠 Fixes From Test Report - 2026-01-29 23:39 JST
+
+**Issues addressed:**
+- QR scan input 404: added fallback search when QR uses username instead of UUID.
+- Unread badge suppression across users: made last-read localStorage key user-scoped.
+
+**Code changes:**
+- `apps/web/src/components/Contacts/ContactsPanel.tsx`
+  - QR scan now attempts request and falls back to search on 404 without swallowing errors.
+- `apps/web/src/components/ChatList.tsx`
+  - last-read key now includes user ID (`chat_read_${chatId}_${userId}`).
+- `apps/web/src/app/chat/[chatId]/page.tsx`
+  - sets last-read key using user-scoped key.
+
+**Local checks:**
+- `pnpm lint` failed: Node v14.13.1 is too old for pnpm (requires Node >=18.12).
+- Remaining checks (type-check/test/build) not run due to Node version.
+
+**Notes:**
+- QR scan now supports openchat codes with usernames by falling back to search results.
+
+---
+
+## 🐳 Docker-Based Testing Setup - 2026-01-29 23:48 JST
+
+**Added:**
+- `docker-compose.local-test.yml` to run API + Web with test Postgres/Redis.
+- `docs/DOCKER_BASED_LOCAL_TESTING_DOC.md` with step-by-step Docker testing instructions.
+
+**Attempted:**
+- `docker ps` failed: permission denied to Docker socket (`/Users/shabuj/.docker/run/docker.sock`).
+
+**Next:**
+- Start Docker Desktop and re-run compose commands in the doc to validate.
+
+---
+
+## 🐳 Docker Test Dockerfiles - 2026-01-30 00:03 JST
+
+**Added:**
+- `docker/apiTest.Dockerfile`
+- `docker/webTest.Dockerfile`
+
+**Updated:**
+- `docker-compose.local-test.yml` now uses test Dockerfiles.
+- `docs/DOCKER_BASED_LOCAL_TESTING_DOC.md` updated to reference test Dockerfiles.
+
+**Attempted:**
+- `docker ps` still blocked by Docker socket permissions; containers not verified.
+
+---
+
+## 🐳 Docker Build Fix - 2026-01-30 00:06 JST
+
+**Issue:** Docker build failed copying `apps/web` due to host `node_modules` in context.
+
+**Fix:**
+- Added `.dockerignore` to exclude `node_modules`, `.next`, `dist`, and other artifacts.
+- Updated Docker testing doc with rebuild instructions.
+
+---
+
+## 🐳 Docker Web Build Fix - 2026-01-30 00:09 JST
+
+**Issue:** `next: not found` in web container. Root cause: `package.json` for web was overwritten by repo root `package.json` in Dockerfile, so Next.js never installed.
+
+**Fix:**
+- `docker/webTest.Dockerfile` now copies only `apps/web/package.json` (no overwrite).
+- `docker/web.Dockerfile` updated similarly.
+
+---
+
+## 🐳 Docker npm ERESOLVE Fix - 2026-01-30 00:12 JST
+
+**Issue:** `npm install` failed in web container due to React 19 peer dependency conflict (`qrcode.react` expects React <= 18).
+
+**Fix:**
+- `docker/webTest.Dockerfile` now runs `npm install --legacy-peer-deps`.
+- `docker/web.Dockerfile` updated the same for consistency.
+- Docker testing doc updated with ERESOLVE troubleshooting.
+
+---
+
+## 🧪 Localhost Spec Validation (Docker) - 2026-01-30 00:24 JST
+
+**Target:** http://localhost:3000 (Docker-based local deployment)
+
+**Accounts created:**
+- Local User A: `test+localusera0130@example.com` / `localusera0130`
+- Local User B: `test+localuserb0130@example.com` / `localuserb0130`
+
+**Validated flows:**
+- ✅ Registration + login (both users).
+- ✅ Contact request flow: search → send → accept → start chat.
+- ✅ Chat send/receive (Local User A → Local User B).
+- ✅ Unread badge shows for recipient (1 badge visible).
+- ✅ Edit flow (message content updated).
+- ⚠️ Edited label shows as `(edited)` appended to content; double `(edited)` appears if the content already includes `(edited)`.
+- ⚠️ QR paste scan `openchat:user:localusera0130` returned “User not found” because request hit 404 and fallback filtered existing contact.
+- ⚠️ Local dev logs show missing icon `/openchat-pwa/icons/icon-144x144.png` (base path mismatch in dev).
+
+**Follow-up fix (code only, not re-tested yet):**
+- QR scan now resolves username/email tokens directly via search and shows “Already in contacts” instead of “User not found”.
+
+---
+
+## 🧪 Localhost Spec Validation (Docker Rebuild) - 2026-01-30 00:43 JST
+
+**Target:** http://localhost:3000 (Docker rebuild)
+
+**Validated in this pass:**
+- ✅ QR scan with `openchat:user:localusera0130` now reports “Already in contacts”.
+- ✅ Send message, add reaction (👍), reply, copy, delete all work in chat.
+- ✅ Block/unblock contact works from contacts list.
+- ✅ Unread badge visible on login for Local User A (badge count shown).
+
+**Observations:**
+- ⚠️ Chat list showed last message “Contact blocked” after block/unblock sequence (expected due to contact event message).
+- ⚠️ Edited message still shows “(edited)(edited)” when content already includes “(edited)”.
+- ⚠️ Local dev still logs missing icon path `/openchat-pwa/icons/icon-144x144.png`.
+
+---
+
+## 🛠 Fix Observations - 2026-01-30 00:48 JST
+
+**Fixes applied:**
+- Prevent duplicate edited label: hide “(edited)” tag when content already ends with “(edited)”.
+- Manifest paths updated to relative (`icons/...`, `start_url: ./`, `scope: ./`) to avoid `/openchat-pwa` icon 404s in local dev.
+
+**Files:**
+- `apps/web/src/app/chat/[chatId]/page.tsx`
+- `apps/web/public/manifest.json`
+
+---
+
+## 🛠 Forwarding Fixes - 2026-01-30 00:53 JST
+
+**Issue:** Forwarded note sent, but forwarded message failed with alert. Root cause: forward metadata sent in `replyToId` (expects string), causing API validation failure.
+
+**Fixes:**
+- `chatAPI.sendMessage` now accepts `metadata`.
+- Forward flow sends metadata via `metadata` and keeps `replyToId` empty.
+- Forwarded message type defaults to `TEXT` if undefined.
+
+**Files:**
+- `apps/web/src/lib/api.ts`
+- `apps/web/src/app/chat/[chatId]/page.tsx`
+
+---
+
+## 🛠 Forward Message API Fix - 2026-01-30 00:59 JST
+
+**Issue:** Forwarded note sent but forwarded message failed with 400. Root cause: API expects `metadata` as JSON string; forward flow now sends metadata object.
+
+**Fix:**
+- API now stringifies `messageData.metadata` before storing (`messages.metadata` is string in Prisma).
+
+**Files:**
+- `apps/api/src/routes/chats.ts`
+
+**Action required:**
+- Rebuild/restart API container to apply fix, then re-test forward flow.
+
+---
+
+## ✅ Forward Message Retest (Docker) - 2026-01-30 01:04 JST
+
+**Result:** Forward now works end-to-end.
+- Forward note delivered.
+- Forwarded message delivered and displays “Forwarded” tag + original content.
+- Success toast shown (“Message forwarded”).

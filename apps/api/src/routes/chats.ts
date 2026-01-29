@@ -404,7 +404,9 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       }
       
       if (messageData.replyToId) messageCreateData.replyToId = messageData.replyToId
-      if (messageData.metadata) messageCreateData.metadata = messageData.metadata
+      if (messageData.metadata) {
+        messageCreateData.metadata = JSON.stringify(messageData.metadata)
+      }
 
       const message = await prisma.message.create({
         data: messageCreateData,
