@@ -102,6 +102,12 @@
 ## ✅ **Latest Progress Update (January 30, 2026 - Forward Retest)**
 - ✅ Forwarding now works end-to-end after API rebuild (note + forwarded content + success toast).
 
+## ✅ **Latest Progress Update (January 30, 2026 10:33 JST)**
+- ✅ Contact request UX now includes in-chat Accept/Decline controls; responding updates Contacts list state.
+- ✅ Messaging rules enforced: incoming pending requests block sending, outgoing pending can still send; blocked users cannot send.
+- ✅ Blocked state disables message interactions (reply/copy/forward/edit/delete) and reactions while keeping history visible.
+- ✅ Presence UX improved: chat list shows online/offline dot (green/gray); connection status uses online grace period to reduce flicker.
+
 ## 🧪 **Local Test: Spec Validation (Playwright)**
 **Date:** January 29, 2026  
 **Scope:** Deployed UI walkthrough against spec for core MVP.  

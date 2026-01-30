@@ -243,7 +243,7 @@ This document catalogs all critical issues discovered during local test report a
 - ✅ Docker-based local testing images created for API/Web with local compose, plus build/run docs.
 - ✅ QR add flow now supports `openchat:user:` IDs directly and no longer misreports existing users as missing.
 - ✅ Forwarded messages fixed end-to-end (metadata send + API stringification) and re-verified in Docker.
-- ✅ Chat last-read and edited display issues fixed (user-scoped read key; avoid duplicate “(edited)”).
+- ✅ Chat last-read and edited display issues fixed (user-scoped read key; avoid duplicate (edited) tag).
 - ✅ Manifest icons/scope updated to avoid local 404s in dev builds.
 
 ### Files Updated (January 29, 2026 23:45 JST)
@@ -258,6 +258,28 @@ This document catalogs all critical issues discovered during local test report a
 - `apps/web/src/app/chat/[chatId]/page.tsx` (forward metadata + edited label guard)
 - `apps/web/src/components/ChatList.tsx` (user-scoped read key)
 - `apps/web/public/manifest.json` (local icon paths + scope)
+
+## ✅ Latest Progress Update (January 30, 2026 10:33 JST)
+- ✅ Enforced contact request rules: incoming pending blocks sending; outgoing pending can still send; blocked users cannot send.
+- ✅ Added Accept/Decline actions inside chat request message and synced contacts after response.
+- ✅ Blocked state now disables message actions (reply/copy/forward/edit/delete) and reactions; history remains visible.
+- ✅ Reduced presence flicker with online grace period and longer shared socket teardown.
+- ✅ Chat list shows online/offline dot (green/gray) for private chats; header status updated.
+
+### Files Updated (January 30, 2026 10:33 JST)
+- `apps/api/src/routes/chats.ts` (contact request + block enforcement for REST sends)
+- `apps/api/src/services/socket.ts` (contact request + block enforcement for realtime sends)
+- `apps/web/src/app/chat/[chatId]/page.tsx` (in-chat accept/decline UI, send gating, disable interactions)
+- `apps/web/src/components/MessageContextMenu.tsx` (disable actions when blocked)
+- `apps/web/src/components/MessageReactions.tsx` (disable reactions when blocked)
+- `apps/web/src/hooks/useSocket.ts` (online grace + longer shared socket teardown)
+- `apps/web/src/components/ChatList.tsx` (presence dot)
+- `apps/web/src/app/page.tsx` (status dot + reconnect label)
+
+## ✅ Latest Progress Update (January 30, 2026 10:55 JST)
+- ✅ Rebuilt Docker and re-verified presence UX in chat list and header.
+- ✅ Confirmed no disconnect flicker during chat → list navigation.
+- ✅ Blocked chat state still disables input/actions while preserving history visibility.
 
 ---
 

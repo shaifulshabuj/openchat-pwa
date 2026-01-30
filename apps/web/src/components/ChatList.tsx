@@ -64,6 +64,12 @@ export function ChatList() {
     return null
   }
 
+  const getChatPresence = (chat: Chat) => {
+    if (chat.type !== 'PRIVATE') return null
+    const otherUser = chat.participants.find((p) => p.user.id !== user?.id)
+    return otherUser?.user.status || null
+  }
+
   const getLastMessagePreview = (chat: Chat) => {
     if (!chat.lastMessage) {
       return 'No messages yet'
@@ -131,6 +137,8 @@ export function ChatList() {
         const avatar = getChatAvatar(chat)
         const lastMessage = getLastMessagePreview(chat)
         const unreadCount = getUnreadCount(chat)
+        const presence = getChatPresence(chat)
+        const isOnline = presence === 'ONLINE'
         const timeAgo = chat.lastMessage 
           ? dayjs(chat.lastMessage.createdAt).fromNow()
           : dayjs(chat.createdAt).fromNow()
@@ -152,6 +160,15 @@ export function ChatList() {
                     </span>
                   )}
                 </div>
+
+                {presence && (
+                  <span
+                    className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-gray-900 ${
+                      isOnline ? 'bg-green-500' : 'bg-gray-400'
+                    }`}
+                    aria-label={isOnline ? 'Online' : 'Offline'}
+                  />
+                )}
                 
                 {unreadCount > 0 && (
                   <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">

@@ -73,7 +73,7 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   const { user } = useAuthStore()
   const { refreshAll: refreshContacts } = useContactsStore()
-  const { isConnected, on, off, joinChat, sendMessage, startTyping, stopTyping } = useSocket()
+  const { isConnected, isOnline, on, off, joinChat, sendMessage, startTyping, stopTyping } = useSocket()
   const { toast } = useToast()
   const router = useRouter()
 
@@ -457,12 +457,12 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   const getChatStatus = () => {
     if (!chat || chat.type !== 'PRIVATE') {
-      return isConnected ? 'Online' : 'Connecting...'
+      return isOnline ? 'Online' : 'Connecting...'
     }
 
     const otherUser = chat.participants.find((p) => p.user.id !== user?.id)
     if (!otherUser) {
-      return isConnected ? 'Online' : 'Connecting...'
+      return isOnline ? 'Online' : 'Connecting...'
     }
 
     return participantStatuses[otherUser.user.id] || 'OFFLINE'

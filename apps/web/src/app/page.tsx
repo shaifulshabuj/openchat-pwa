@@ -25,7 +25,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
   const { user, isAuthenticated, isLoading, logout, checkAuth } = useAuthStore()
-  const { isConnected, joinChat, sendMessage } = useSocket()
+  const { isConnected, isOnline, joinChat, sendMessage } = useSocket()
   const router = useRouter()
 
   // Handle hydration mismatch for static export
@@ -83,10 +83,10 @@ export default function Home() {
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">OpenChat</h1>
               <div className="flex items-center gap-2">
                 <div
-                  className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+                  className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}
                 ></div>
                 <span className="text-xs text-gray-500">
-                  {isConnected ? 'Connected' : 'Disconnected'}
+                  {isOnline ? 'Connected' : 'Reconnecting...'}
                 </span>
               </div>
             </div>

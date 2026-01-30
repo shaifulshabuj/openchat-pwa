@@ -20,13 +20,17 @@ export interface SocketEvents {
 let sharedSocket: Socket | null = null
 let sharedSubscribers = 0
 let disconnectTimer: number | null = null
+const OFFLINE_GRACE_MS = 5000
+const SHARED_SOCKET_DISCONNECT_DELAY_MS = 10000
 
 export const useSocket = () => {
   const [isConnected, setIsConnected] = useState(false)
+  const [isOnline, setIsOnline] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { token, isAuthenticated } = useAuthStore()
   const socketRef = useRef<Socket | null>(null)
   const disconnectTimerRef = useRef<number | null>(null)
+  const offlineTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
@@ -36,6 +40,7 @@ export const useSocket = () => {
         sharedSocket = null
       }
       setIsConnected(false)
+      setIsOnline(false)
       return
     }
 
@@ -62,6 +67,9 @@ export const useSocket = () => {
       sharedSocket.connect()
     }
     setIsConnected(sharedSocket.connected)
+    if (sharedSocket.connected) {
+      setIsOnline(true)
+    }
 
     // Connection event handlers
     const handleConnect = () => {
@@ -70,11 +78,16 @@ export const useSocket = () => {
         window.clearTimeout(disconnectTimerRef.current)
         disconnectTimerRef.current = null
       }
+      if (offlineTimerRef.current) {
+        window.clearTimeout(offlineTimerRef.current)
+        offlineTimerRef.current = null
+      }
       if (disconnectTimer) {
         window.clearTimeout(disconnectTimer)
         disconnectTimer = null
       }
       setIsConnected(true)
+      setIsOnline(true)
       setError(null)
     }
 
@@ -86,6 +99,12 @@ export const useSocket = () => {
       disconnectTimerRef.current = window.setTimeout(() => {
         setIsConnected(false)
       }, 400)
+      if (offlineTimerRef.current) {
+        window.clearTimeout(offlineTimerRef.current)
+      }
+      offlineTimerRef.current = window.setTimeout(() => {
+        setIsOnline(false)
+      }, OFFLINE_GRACE_MS)
     }
 
     const handleConnectError = (error: Error) => {
@@ -107,6 +126,10 @@ export const useSocket = () => {
         window.clearTimeout(disconnectTimerRef.current)
         disconnectTimerRef.current = null
       }
+      if (offlineTimerRef.current) {
+        window.clearTimeout(offlineTimerRef.current)
+        offlineTimerRef.current = null
+      }
       if (sharedSocket) {
         sharedSocket.off('connect', handleConnect)
         sharedSocket.off('disconnect', handleDisconnect)
@@ -121,7 +144,9 @@ export const useSocket = () => {
           sharedSocket?.disconnect()
           sharedSocket = null
           disconnectTimer = null
-        }, 2000)
+          setIsConnected(false)
+          setIsOnline(false)
+        }, SHARED_SOCKET_DISCONNECT_DELAY_MS)
       }
     }
   }, [isAuthenticated, token])
@@ -172,6 +197,7 @@ export const useSocket = () => {
   return {
     socket: socketRef.current,
     isConnected,
+    isOnline,
     error,
     emit,
     on,

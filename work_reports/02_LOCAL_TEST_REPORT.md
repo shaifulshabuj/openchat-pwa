@@ -52,6 +52,17 @@
 - Test users created: `pendingout0130`, `pendingin0130`, `pendingtarget0130`.
 - Flows exercised: register → login → request → accept in chat → verify contacts; outgoing pending send; block flow and blocked UI.
 
+## ✅ Latest Progress Update (January 30, 2026 10:33 JST)
+- ✅ Chat list now shows online/offline status with green/gray dot for private chats.
+- ✅ Presence flicker reduced by introducing a client-side online grace period and longer shared socket teardown.
+- ✅ Header connection status now uses "Connected/Reconnecting..." with green/gray dot for consistency.
+
+## ✅ Latest Progress Update (January 30, 2026 10:55 JST)
+- ✅ Rebuilt Docker and verified presence dot rendering in chat list.
+- ✅ Header status uses green/gray dot with "Connected/Reconnecting..." wording.
+- ✅ Navigation between chat and list no longer flickers to a red disconnected indicator.
+- ✅ Blocked chat still enforces disabled input/reactions/actions while keeping history visible.
+
 ## 🎯 Executive Summary
 
 **Major enhancements completed:**
