@@ -19,6 +19,13 @@
 - ✅ Forwarded messages now tag “Forwarded” and briefly highlight on receive.
 - ⚠️ Local tests not re-run due to missing dependencies / Node 14 environment (Next 16 requires Node 20+).
 
+## ✅ **Latest Progress Update (January 30, 2026)**
+- ✅ Profile management delivered (display name, username, bio, status) with dedicated profile screen.
+- ✅ Avatar upload flow fixed: multipart buffer handling, correct file URLs, and file serving for `/api/upload/files/*`.
+- ✅ File serving CORS/CORP adjusted to allow cross-origin image loading.
+- ✅ File upload UX improved: full drop area clickable and keyboard accessible; preview modal added for avatar.
+- ✅ Docker local test stack updated to include db push on startup to avoid migration baseline issues.
+
 ## ✅ **Latest Progress Update (January 28, 2026)**
 - ✅ Contacts UX: camera-based QR scan, permission handling with retry, QR validation before request, and outgoing request state in search.
 - ✅ Chat UX: reply jump highlight, forward with optional note + multi-chat selection, reactions no longer auto-scroll.

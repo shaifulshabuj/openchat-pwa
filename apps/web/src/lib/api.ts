@@ -56,6 +56,7 @@ export interface User {
   email: string
   username: string
   displayName: string
+  bio?: string
   avatar?: string
   status: 'ONLINE' | 'OFFLINE' | 'AWAY' | 'BUSY'
   lastSeen?: string

@@ -48,6 +48,7 @@ This document summarizes the development progress, deployments, and resolutions 
 - Progressive Web App features
 - Mobile-first responsive design
 - Form validation and error handling
+ - Media file serving now supported via `/api/upload/files/*`
 
 ### 🎯 Performance Metrics
 - API response time: <100ms (local)
@@ -201,6 +202,12 @@ This document summarizes the development progress, deployments, and resolutions 
 - Toast destructive variant uses solid background (camera errors readable).
 - Safe‑area padding + `100svh` layout to prevent clipped headers/footers on iOS.
 - Contacts modal body now scrolls with fixed header.
+
+### ✅ Profile & Uploads
+- New profile screen with editable display name, username, bio, and status.
+- Avatar upload fixed: multipart buffer handling, correct file URLs, and size limit handling (413 on oversize).
+- File serving now uses `/api/upload/files/*` and allows cross‑origin image rendering (CORP).
+- File upload UI: full drop area clickable, keyboard accessible, and avatar preview modal.
 
 ### ✅ Local Docker Testing Improvements
 - Added `docker/apiTest.Dockerfile`, `docker/webTest.Dockerfile`, and `docker-compose.local-test.yml`.

@@ -14,12 +14,6 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: 'No file uploaded' })
       }
 
-      // Validate file size (10MB max)
-      const maxSize = 10 * 1024 * 1024 // 10MB
-      if (data.file.bytesRead > maxSize) {
-        return reply.status(400).send({ error: 'File too large. Maximum size is 10MB.' })
-      }
-
       // Validate file type
       const allowedTypes = [
         'image/jpeg',
@@ -38,6 +32,15 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: 'File type not supported' })
       }
 
+      // Read file buffer
+      const buffer = await data.toBuffer()
+
+      // Validate file size (10MB max)
+      const maxSize = 10 * 1024 * 1024 // 10MB
+      if (buffer.length > maxSize) {
+        return reply.status(400).send({ error: 'File too large. Maximum size is 10MB.' })
+      }
+
       // Generate unique filename
       const timestamp = Date.now()
       const userId = request.auth.userId
@@ -51,7 +54,6 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
       const filepath = path.join(uploadDir, filename)
       
       // Save file
-      const buffer = await data.file.toBuffer()
       await fs.writeFile(filepath, buffer)
 
       // Generate thumbnail for images
@@ -76,8 +78,8 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
         originalName: data.filename,
         mimetype: data.mimetype,
         size: buffer.length,
-        url: `/api/files/${filename}`,
-        thumbnailUrl: thumbnailPath ? `/api/files/thumb_${filename}` : null,
+        url: `/api/upload/files/${filename}`,
+        thumbnailUrl: thumbnailPath ? `/api/upload/files/thumb_${filename}` : null,
         uploadedBy: userId,
         uploadedAt: new Date().toISOString()
       }
@@ -87,7 +89,10 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
         data: fileInfo
       })
       
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.code === 'FST_REQ_FILE_TOO_LARGE') {
+        return reply.status(413).send({ error: 'File too large. Maximum size is 10MB.' })
+      }
       fastify.log.error(error)
       return reply.status(500).send({ error: 'File upload failed' })
     }
@@ -98,7 +103,7 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
     try {
       const { filename } = request.params
       const uploadDir = process.env.UPLOAD_PATH || './uploads'
-      const filepath = path.join(uploadDir, filename)
+      const filepath = path.resolve(uploadDir, filename)
       
       // Security check - prevent path traversal
       if (!filepath.startsWith(path.resolve(uploadDir))) {
@@ -135,6 +140,7 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
       
       reply.header('Content-Type', contentType)
       reply.header('Cache-Control', 'public, max-age=31536000') // 1 year cache
+      reply.header('Cross-Origin-Resource-Policy', 'cross-origin')
       
       return reply.send(stream)
       

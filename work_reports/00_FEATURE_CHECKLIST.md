@@ -20,7 +20,7 @@ Legend: ✅ Working | ⚠️ Partial | ❌ Not implemented | — Not reported
 | Session management | ✅ | ✅ | ✅ Working (local storage) |  | [x] |
 | Password reset via email | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
 | Two-Factor Authentication (2FA) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
-| Profile management (avatar, username, bio, status) | ✅ | — | — Not reported | Not reported in status updates | [ ] |
+| Profile management (avatar, username, bio, status) | ✅ | ✅ | ✅ Working |  | [x] |
 
 ### **1.2 One-on-One Chat**
 

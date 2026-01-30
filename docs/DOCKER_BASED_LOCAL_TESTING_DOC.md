@@ -6,21 +6,10 @@ This guide runs the API + Web in Docker using the test Postgres/Redis services a
 - Docker Desktop (or Docker Engine) running locally.
 - Ports free: `3000`, `8080`, `5433`, `6380`.
 
-## 1) Start test databases (Postgres + Redis)
-From the repo root:
+## 1) Build and run API + Web (includes Postgres + Redis)
 
 ```bash
-docker compose -f docker-compose.test.yml up -d
-```
-
-This starts:
-- Postgres on `localhost:5433`
-- Redis on `localhost:6380`
-
-## 2) Build and run API + Web using Docker (test Dockerfiles)
-
-```bash
-docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml up --build -d
+docker compose -f docker-compose.local-test.yml up --build -d
 ```
 
 Dockerfiles used:
@@ -30,30 +19,32 @@ Dockerfiles used:
 Services:
 - API: `http://localhost:8080`
 - Web: `http://localhost:3000`
+- Postgres: `localhost:5433`
+- Redis: `localhost:6380`
 
-## 3) Run API tests inside the container
+## 2) Run API tests inside the container
 
 ```bash
-docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml exec api npm test
+docker compose -f docker-compose.local-test.yml exec api npm test
 ```
 
-## 4) Run lint/type-check/build inside containers (optional)
+## 3) Run lint/type-check/build inside containers (optional)
 
 ```bash
 # API
-docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml exec api npm run lint
-docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml exec api npm run type-check
+docker compose -f docker-compose.local-test.yml exec api npm run lint
+docker compose -f docker-compose.local-test.yml exec api npm run type-check
 
 # Web
-docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml exec web npm run lint
-docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml exec web npm run type-check
-docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml exec web npm run build
+docker compose -f docker-compose.local-test.yml exec web npm run lint
+docker compose -f docker-compose.local-test.yml exec web npm run type-check
+docker compose -f docker-compose.local-test.yml exec web npm run build
 ```
 
-## 5) Stop containers
+## 4) Stop containers
 
 ```bash
-docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml down
+docker compose -f docker-compose.local-test.yml down
 ```
 
 ## Troubleshooting
@@ -63,7 +54,7 @@ If you see errors like “cannot replace ... node_modules ... with file”, ensu
 
 ```bash
 docker builder prune -f
-docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml up --build -d
+docker compose -f docker-compose.local-test.yml up --build -d
 ```
 
 ### npm ERESOLVE / peer dependency conflicts
@@ -72,10 +63,19 @@ If you still see ERESOLVE errors, rebuild with a clean cache:
 
 ```bash
 docker builder prune -f
-docker compose -f docker-compose.test.yml -f docker-compose.local-test.yml up --build -d
+docker compose -f docker-compose.local-test.yml up --build -d
+```
+
+### Prisma P3005 on non-empty DB
+If you see `P3005` (schema not empty) during startup, ensure the API test Dockerfile runs `prisma db push` (current default). Rebuild the API container:
+
+```bash
+docker compose -f docker-compose.local-test.yml build --no-cache api
+docker compose -f docker-compose.local-test.yml up -d
 ```
 
 ## Notes
-- The API container uses `DATABASE_URL` and `REDIS_URL` pointing to the test services.
+- The API container uses `DATABASE_URL` and `REDIS_URL` pointing to the local test services.
 - The Web container uses `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_SOCKET_URL` pointing to `localhost:8080`.
+- The API test container runs `prisma db push` on startup to keep the schema in sync.
 - If Docker socket permissions fail, ensure Docker Desktop is running and your user has access.

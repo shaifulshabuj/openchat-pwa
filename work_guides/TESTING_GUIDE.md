@@ -2,12 +2,14 @@
 
 ## 🚀 Services Running
 
-Both services are running successfully:
+Docker-based local testing stack (recommended):
 
 - **Frontend (Web App):** http://localhost:3000
-- **Backend API:** http://localhost:8001
-- **Socket.io:** ws://localhost:8001
-- **API Health:** ✅ Running (http://localhost:8001/health)
+- **Backend API:** http://localhost:8080
+- **Socket.io:** ws://localhost:8080
+- **Postgres:** localhost:5433
+- **Redis:** localhost:6380
+- **API Health:** http://localhost:8080/health
 
 ---
 
@@ -73,50 +75,51 @@ Both services are running successfully:
    - Last message preview
    - Unread count badges
 
-4. **File Upload**
-   - Image uploads
-   - File uploads
+4. **Message Actions**
+   - Reply, forward, copy
+   - Reactions
+   - Context menu actions
+
+5. **Contacts**
+   - Search users
+   - Send/accept/decline requests
+   - Block/unblock
+   - QR code add (scan/manual)
+
+6. **File Upload**
+   - Image/file uploads in chat
    - Progress tracking
    - Size validation (10MB limit)
 
-5. **PWA Features**
+7. **Profile**
+   - Edit display name, username, bio, status
+   - Avatar upload (via FileUpload)
+
+8. **PWA Features**
    - Manifest configured
    - Installable (Add to Home Screen)
    - Service worker for push notifications
 
 ### ⚠️ Partial Features
 
-1. **Message Reactions**
-   - UI exists for reactions
-   - Schema ready in database
-   - API endpoints NOT implemented
-
-2. **Message Editing**
+1. **Message Editing**
    - Schema flag exists (`isEdited`)
    - UI/NOT NOT implemented
 
-3. **Message Deletion**
+2. **Message Deletion**
    - Schema flags exist (`isDeleted`, `deletedAt`)
    - Soft delete API NOT implemented
 
-4. **Read Receipts**
+3. **Read Receipts**
    - No implementation
 
-5. **Contacts Tab**
-   - Placeholder UI only
-   - No functionality
-
-6. **Calls Tab**
+4. **Calls Tab**
    - Placeholder UI only
    - No WebRTC implementation
 
-7. **Settings Tab**
+5. **Settings Tab**
    - Basic info display
-   - No functional settings
-
-8. **Dark Mode**
-   - CSS classes ready
-   - No toggle UI
+   - No advanced settings beyond profile
 
 ---
 
@@ -126,17 +129,17 @@ Both services are running successfully:
 
 ```bash
 # Login
-curl -X POST http://localhost:8001/api/auth/login \
+curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"alice@openchat.dev","password":"Demo123456"}'
 
 # Register new user
-curl -X POST http://localhost:8001/api/auth/register \
+curl -X POST http://localhost:8080/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","username":"testuser","displayName":"Test User","password":"Test1234"}'
 
 # Get profile (requires token)
-curl -X GET http://localhost:8001/api/auth/me \
+curl -X GET http://localhost:8080/api/auth/me \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -144,11 +147,11 @@ curl -X GET http://localhost:8001/api/auth/me \
 
 ```bash
 # Get all chats (requires token)
-curl -X GET http://localhost:8001/api/chats \
+curl -X GET http://localhost:8080/api/chats \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
 # Create new chat (requires token)
-curl -X POST http://localhost:8001/api/chats \
+curl -X POST http://localhost:8080/api/chats \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"type":"PRIVATE","participants":[{"userId":"bob_user_id"}]}'
@@ -157,7 +160,7 @@ curl -X POST http://localhost:8001/api/chats \
 ### Test Health
 
 ```bash
-curl http://localhost:8001/health
+curl http://localhost:8080/health
 ```
 
 ---
@@ -216,7 +219,7 @@ The database has been seeded with demo data:
 
 - ✅ **FIXED** - Backend CORS now properly configured:
   - Frontend URL: http://localhost:3000
-  - Backend URL: http://localhost:8001
+  - Backend URL: http://localhost:8080
   - Backend CORS configured to allow: localhost:3000, localhost:3001
   - Environment variable `ALLOWED_ORIGINS` updated
   - Socket.io CORS also updated with same origins
@@ -234,8 +237,15 @@ The database has been seeded with demo data:
 # Kill process on port 3000
 lsof -ti:3000 | xargs kill -9
 
-# Kill process on port 8001
-lsof -ti:8001 | xargs kill -9
+# Kill process on port 8080
+lsof -ti:8080 | xargs kill -9
+
+**Issue: Prisma P3005 when using Docker local test**
+
+- Cause: `migrate deploy` against a non-empty schema
+- Solution: Ensure API test container runs `prisma db push` (already set in `docker/apiTest.Dockerfile`), then rebuild:
+  - `docker compose -f docker-compose.local-test.yml build --no-cache api`
+  - `docker compose -f docker-compose.local-test.yml up -d`
 
 # Restart services
 pnpm dev

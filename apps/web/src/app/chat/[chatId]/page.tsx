@@ -468,7 +468,7 @@ export default function ChatPage({ params }: ChatPageProps) {
     return participantStatuses[otherUser.user.id] || 'OFFLINE'
   }
 
-  const handleFileUploaded = (fileInfo: any) => {
+  const handleFileUploaded = async (fileInfo: any) => {
     if (!canSendMessages) {
       toast({
         variant: 'destructive',
@@ -477,10 +477,35 @@ export default function ChatPage({ params }: ChatPageProps) {
       })
       return
     }
-    // Send file message
-    const fileMessage = `📎 ${fileInfo.filename}`
-    if (isConnected) {
-      sendMessage(chatId, fileMessage, 'FILE')
+
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || ''
+      const resolveUrl = (url?: string | null) => {
+        if (!url) return null
+        if (url.startsWith('http')) return url
+        if (!apiBase) return url
+        return `${apiBase}${url}`
+      }
+
+      const fileMessage = `📎 ${fileInfo.filename}`
+      await chatAPI.sendMessage(chatId, {
+        content: fileMessage,
+        type: 'FILE',
+        metadata: {
+          url: resolveUrl(fileInfo.url),
+          thumbnailUrl: resolveUrl(fileInfo.thumbnailUrl),
+          mimetype: fileInfo.mimetype,
+          size: fileInfo.size,
+          filename: fileInfo.filename,
+        }
+      })
+    } catch (error) {
+      console.error('Error sending file message:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Upload failed',
+        description: 'Unable to send file message. Please try again.',
+      })
     }
   }
 
@@ -923,7 +948,8 @@ export default function ChatPage({ params }: ChatPageProps) {
     if (!isFile) return null
 
     const filename = message.content.replace('📎 ', '')
-    const fileUrl = message.metadata ? JSON.parse(message.metadata).url : null
+    const metadata = normalizeMetadata(message.metadata) as any
+    const fileUrl = metadata?.url || null
 
     return (
       <div className="flex items-center gap-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
@@ -933,9 +959,15 @@ export default function ChatPage({ params }: ChatPageProps) {
           <p className="text-xs text-gray-500 dark:text-gray-400">Shared file</p>
         </div>
         {fileUrl && (
-          <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+          <a
+            href={fileUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            aria-label="Download file"
+          >
             <Download className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-          </button>
+          </a>
         )}
       </div>
     )

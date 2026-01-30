@@ -191,9 +191,14 @@ export default function Home() {
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                     Profile management and preferences
                   </p>
-                  <Button onClick={handleLogout} variant="outline" size="sm">
-                    Sign Out
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={() => router.push('/profile')} size="sm">
+                      Edit Profile
+                    </Button>
+                    <Button onClick={handleLogout} variant="outline" size="sm">
+                      Sign Out
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">

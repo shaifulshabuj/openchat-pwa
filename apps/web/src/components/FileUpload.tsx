@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useId, useState, useRef } from 'react'
 import { Upload, X, FileText, Image as ImageIcon, Music, Video, Download } from 'lucide-react'
 import { Button } from './ui/button'
 
@@ -40,6 +40,18 @@ export function FileUpload({
   const [error, setError] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const inputId = useId()
+
+  const triggerFilePicker = () => {
+    const input = fileInputRef.current
+    if (!input) return
+    input.value = ''
+    if (typeof (input as HTMLInputElement & { showPicker?: () => void }).showPicker === 'function') {
+      ;(input as HTMLInputElement & { showPicker?: () => void }).showPicker?.()
+      return
+    }
+    input.click()
+  }
 
   const handleFileSelect = (file: File) => {
     setError(null)
@@ -99,7 +111,8 @@ export function FileUpload({
         setUploading(false)
       }
 
-      xhr.open('POST', `${process.env.NEXT_PUBLIC_API_URL}/api/upload/file`)
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+      xhr.open('POST', `${apiBase}/api/upload/file`)
       
       // Add auth header
       const token = localStorage.getItem('auth_token')
@@ -197,8 +210,9 @@ export function FileUpload({
             </div>
           ) : (
             <>
-              <div
-                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+              <label
+                htmlFor={inputId}
+                className={`w-full border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer flex flex-col items-center ${
                   dragOver 
                     ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
                     : 'border-gray-300 dark:border-gray-600 hover:border-green-400'
@@ -206,6 +220,15 @@ export function FileUpload({
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
+                onClick={triggerFilePicker}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    triggerFilePicker()
+                  }
+                }}
               >
                 <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -215,14 +238,10 @@ export function FileUpload({
                   Maximum {maxSize}MB • Images, Documents, Audio, Video
                 </p>
                 
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="mt-4"
-                  variant="outline"
-                >
-                  Browse Files
-                </Button>
-              </div>
+                <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                  Click anywhere in this area to choose a file
+                </p>
+              </label>
 
               <div className="mt-4 text-xs text-gray-500 dark:text-gray-500">
                 <p className="font-medium mb-1">Supported formats:</p>
@@ -236,11 +255,12 @@ export function FileUpload({
         </div>
 
         <input
+          id={inputId}
           ref={fileInputRef}
           type="file"
           onChange={handleFileInputChange}
           accept={allowedTypes.join(',')}
-          className="hidden"
+          className="sr-only"
         />
       </div>
     </div>

@@ -198,6 +198,23 @@ This document catalogs all critical issues discovered during local test report a
 ## ✅ Latest Progress Update (January 28, 2026 01:59 JST)
 - ✅ Contact search now hides existing contacts and shows “Request sent” for pending outgoing requests.
 
+## ⚠️ Latest Progress Update (January 30, 2026 16:45 JST)
+- ⚠️ Avatar upload via FileUpload still fails with `500` from `/api/upload/file` (Profile page).
+- ✅ Reproduced via Docker local test stack (`localhost:3000`).
+- ⏭️ Pending: investigate API upload handler for 500s.
+
+## ✅ Latest Progress Update (January 30, 2026 18:25 JST)
+- ✅ Fixed file upload 500 by switching to `data.toBuffer()` and handling multipart file size errors with 413.
+- ✅ Corrected returned file URLs to `/api/upload/files/*` and resolved path traversal checks.
+- ✅ Added `Cross-Origin-Resource-Policy: cross-origin` to allow image rendering from API.
+- ✅ File upload UX: full drop area clickable and avatar preview modal added.
+
+### Files Updated (January 30, 2026 18:25 JST)
+- `apps/api/src/routes/upload.ts`
+- `apps/api/src/index.ts`
+- `apps/web/src/components/FileUpload.tsx`
+- `apps/web/src/app/profile/page.tsx`
+
 ### Files Updated (January 28, 2026 01:59 JST)
 - `apps/web/src/components/Contacts/ContactsPanel.tsx` (search filtering + request state)
 
@@ -280,6 +297,10 @@ This document catalogs all critical issues discovered during local test report a
 - ✅ Rebuilt Docker and re-verified presence UX in chat list and header.
 - ✅ Confirmed no disconnect flicker during chat → list navigation.
 - ✅ Blocked chat state still disables input/actions while preserving history visibility.
+
+## ✅ Latest Progress Update (January 30, 2026 13:23 JST)
+- ✅ Profile update now succeeds after null-safe payload + API validation update.
+- ⚠️ Avatar upload via FileUpload still returns 500 from `/api/upload/file` in Docker test.
 
 ---
 

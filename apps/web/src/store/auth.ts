@@ -146,9 +146,15 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       updateProfile: async (data) => {
         set({ isLoading: true, error: null })
         try {
-          const response = await authAPI.updateProfile(data)
+          const cleaned = Object.fromEntries(
+            Object.entries(data).filter(([, value]) => value !== undefined && value !== null)
+          )
+          const response = await authAPI.updateProfile(cleaned)
 
           if (response.success) {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('user_data', JSON.stringify(response.data))
+            }
             set({
               user: response.data,
               isLoading: false,
@@ -158,7 +164,12 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             throw new Error('Profile update failed')
           }
         } catch (error: any) {
-          const errorMessage = error.response?.data?.error || 'Profile update failed'
+          const details = error.response?.data?.details
+          const detailMessage = Array.isArray(details) && details.length > 0
+            ? details.map((item: any) => item.message).join(', ')
+            : null
+          const errorMessage =
+            detailMessage || error.response?.data?.error || 'Profile update failed'
           set({
             error: errorMessage,
             isLoading: false,
@@ -168,6 +179,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
 
       setUser: (user: User) => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user_data', JSON.stringify(user))
+        }
         set({ user })
       },
 

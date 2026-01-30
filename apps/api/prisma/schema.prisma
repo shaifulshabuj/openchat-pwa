@@ -15,6 +15,7 @@ model User {
   email       String   @unique
   username    String   @unique
   displayName String
+  bio         String?
   avatar      String?
   password    String
   status      String   @default("OFFLINE") // ONLINE, OFFLINE, AWAY, BUSY

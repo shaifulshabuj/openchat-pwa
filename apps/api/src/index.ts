@@ -58,7 +58,11 @@ export const build = async () => {
   })
 
   // File upload support
-  app.register(multipart)
+  app.register(multipart, {
+    limits: {
+      fileSize: 10 * 1024 * 1024
+    }
+  })
 
   // Root path for Railway health checks
   app.get('/', async () => {

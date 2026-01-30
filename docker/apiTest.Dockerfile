@@ -16,5 +16,5 @@ RUN PRISMA_CLI_BINARY_TARGETS="linux-musl" npm run db:generate
 
 EXPOSE 8080
 
-# Use dev server for local testing
-CMD ["npm", "run", "dev"]
+# Use dev server for local testing (sync schema on startup)
+CMD ["sh", "-c", "npx prisma db push && npm run dev"]

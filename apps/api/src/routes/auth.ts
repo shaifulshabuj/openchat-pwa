@@ -41,6 +41,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
           email: true,
           username: true,
           displayName: true,
+          bio: true,
           avatar: true,
           status: true,
           createdAt: true
@@ -89,6 +90,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
           email: true,
           username: true,
           displayName: true,
+          bio: true,
           avatar: true,
           status: true,
           password: true
@@ -151,6 +153,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
           email: true,
           username: true,
           displayName: true,
+          bio: true,
           avatar: true,
           status: true,
           lastSeen: true,
@@ -181,9 +184,25 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
       // Filter out undefined values for Prisma strict typing
       const data: any = {}
+      if (updateData.username !== undefined) data.username = updateData.username
       if (updateData.displayName !== undefined) data.displayName = updateData.displayName
+      if (updateData.bio !== undefined) data.bio = updateData.bio
       if (updateData.avatar !== undefined) data.avatar = updateData.avatar
       if (updateData.status !== undefined) data.status = updateData.status
+
+      if (updateData.username) {
+        const existingUser = await prisma.user.findFirst({
+          where: {
+            username: updateData.username,
+            id: { not: request.auth.userId }
+          },
+          select: { id: true }
+        })
+
+        if (existingUser) {
+          return reply.status(400).send({ error: 'Username already exists' })
+        }
+      }
 
       const user = await prisma.user.update({
         where: { id: request.auth.userId },
@@ -193,6 +212,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
           email: true,
           username: true,
           displayName: true,
+          bio: true,
           avatar: true,
           status: true,
           lastSeen: true,

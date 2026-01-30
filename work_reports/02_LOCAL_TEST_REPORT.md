@@ -63,6 +63,22 @@
 - ✅ Navigation between chat and list no longer flickers to a red disconnected indicator.
 - ✅ Blocked chat still enforces disabled input/reactions/actions while keeping history visible.
 
+## ✅ Latest Progress Update (January 30, 2026 13:23 JST)
+- ✅ Profile screen verified (display name/username/bio/status visible).
+- ✅ Profile save now succeeds after API update (toast confirms).
+- ⚠️ Avatar upload via FileUpload fails with 500 from `/api/upload/file` during test (needs API-side fix).
+
+## ✅ Latest Progress Update (January 30, 2026 16:45 JST)
+- ✅ Re-tested avatar upload via FileUpload on Profile page.
+- ❌ Upload still fails with `500` from `/api/upload/file` (error toast: “File upload failed”).
+- Environment: Docker local test stack (`localhost:3000`).
+
+## ✅ Latest Progress Update (January 30, 2026 18:25 JST)
+- ✅ Upload API fixed: multipart buffer handling, correct file URLs, CORP header for file serving.
+- ✅ Drag/drop and click upload now succeed; file retrieval returns 200 and loads in browser.
+- ✅ Avatar preview modal opens with full-size image on click.
+- Environment: Docker local test stack (`localhost:3000` / API `localhost:8080`).
+
 ## 🎯 Executive Summary
 
 **Major enhancements completed:**
