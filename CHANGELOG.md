@@ -167,6 +167,49 @@ This document summarizes the development progress, deployments, and resolutions 
 
 ---
 
+## 🚀 Version 1.2.0 - Post‑Release Stabilization & UX Improvements
+**Date:** January 30, 2026
+
+### ✅ Contacts & Request Flow
+- In‑chat Accept/Decline actions for contact requests; Contacts list syncs after response.
+- Contact search now hides existing contacts and marks outgoing requests as “Request sent”.
+- QR add flow handles `openchat:user:` payloads, UUIDs, usernames, and emails (no false “user not found”).
+- QR scan now validates user existence before sending request.
+- Personal QR card + camera-based scanning with permission handling, retry, and improved modal UI.
+
+### ✅ Messaging Rules & Safety
+- Incoming pending requests block sending; outgoing pending requests can still send.
+- Blocked contacts cannot send; blocked state disables reply/copy/forward/edit/delete + reactions.
+- Message input/attachments disabled when blocked; history remains visible.
+
+### ✅ Chat UX & Reliability
+- Reply preview jump with highlight; reply chip is clickable.
+- Reaction UI positioning stabilized; no auto-scroll on reaction add/remove.
+- Duplicate edited tag prevented when content already ends with “(edited)”.
+- Unread badge uses user-scoped storage keys to avoid cross-user suppression.
+- Forwarding supports multi‑chat selection + optional note; forwarded tag + highlight on receive.
+- Forward metadata persisted correctly in API (stringified to Prisma type).
+
+### ✅ Presence & Status UX
+- Chat list shows online/offline dot (green/gray) for private chats.
+- Connection indicator uses online grace period to reduce flicker during navigation.
+- Header status text updated to “Connected/Reconnecting…” with green/gray dot.
+
+### ✅ UI/Theme & Layout
+- Dark mode reliability improved (Tailwind v4 custom dark variant + hydration‑safe theme boot).
+- Login page dark theme colors refined.
+- Toast destructive variant uses solid background (camera errors readable).
+- Safe‑area padding + `100svh` layout to prevent clipped headers/footers on iOS.
+- Contacts modal body now scrolls with fixed header.
+
+### ✅ Local Docker Testing Improvements
+- Added `docker/apiTest.Dockerfile`, `docker/webTest.Dockerfile`, and `docker-compose.local-test.yml`.
+- `.dockerignore` prevents node_modules copy errors.
+- Added `docs/DOCKER_BASED_LOCAL_TESTING_DOC.md` for Docker-based local testing.
+
+### 🧪 Verification
+- Playwright UI tests run against `http://localhost:3000` for contact requests, pending rules, block behavior, and presence UI.
+
 ## 📊 Current Project Status
 **Overall Completion:** 85% Production Ready
 
