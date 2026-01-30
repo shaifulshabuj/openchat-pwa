@@ -20,6 +20,8 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
         'image/png', 
         'image/gif',
         'image/webp',
+        'image/heic',
+        'image/heif',
         'application/pdf',
         'text/plain',
         'audio/mpeg',

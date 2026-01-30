@@ -250,7 +250,14 @@ export default function ProfilePage() {
           onFileUploaded={handleAvatarUploaded}
           onClose={() => setShowAvatarUpload(false)}
           maxSize={5}
-          allowedTypes={['image/jpeg', 'image/png', 'image/gif', 'image/webp']}
+          allowedTypes={[
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'image/heic',
+            'image/heif'
+          ]}
         />
       )}
 

@@ -79,6 +79,10 @@
 - ✅ Avatar preview modal opens with full-size image on click.
 - Environment: Docker local test stack (`localhost:3000` / API `localhost:8080`).
 
+## ✅ Latest Progress Update (January 30, 2026 19:10 JST)
+- ✅ Mobile photo library upload fix: HEIC/HEIF allowed and MIME inferred when missing.
+- ✅ Improves iOS/Android/Windows photo selection compatibility.
+
 ## 🎯 Executive Summary
 
 **Major enhancements completed:**

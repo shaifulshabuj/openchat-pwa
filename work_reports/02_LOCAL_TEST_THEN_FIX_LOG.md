@@ -215,6 +215,15 @@ This document catalogs all critical issues discovered during local test report a
 - `apps/web/src/components/FileUpload.tsx`
 - `apps/web/src/app/profile/page.tsx`
 
+## ✅ Latest Progress Update (January 30, 2026 19:10 JST)
+- ✅ iOS photo library uploads fixed by allowing HEIC/HEIF and inferring MIME from filename when missing.
+- ✅ Updated supported formats text to include HEIC for clarity.
+
+### Files Updated (January 30, 2026 19:10 JST)
+- `apps/web/src/components/FileUpload.tsx`
+- `apps/web/src/app/profile/page.tsx`
+- `apps/api/src/routes/upload.ts`
+
 ### Files Updated (January 28, 2026 01:59 JST)
 - `apps/web/src/components/Contacts/ContactsPanel.tsx` (search filtering + request state)
 

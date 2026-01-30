@@ -27,6 +27,8 @@ export function FileUpload({
     'image/png', 
     'image/gif',
     'image/webp',
+    'image/heic',
+    'image/heif',
     'application/pdf',
     'text/plain',
     'audio/mpeg',
@@ -41,6 +43,36 @@ export function FileUpload({
   const [uploadProgress, setUploadProgress] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputId = useId()
+
+  const inferMimeType = (filename: string) => {
+    const ext = filename.toLowerCase().split('.').pop()
+    if (!ext) return ''
+    const mimeMap: Record<string, string> = {
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      gif: 'image/gif',
+      webp: 'image/webp',
+      heic: 'image/heic',
+      heif: 'image/heif',
+      pdf: 'application/pdf',
+      txt: 'text/plain',
+      mp3: 'audio/mpeg',
+      wav: 'audio/wav',
+      mp4: 'video/mp4',
+      webm: 'video/webm'
+    }
+    return mimeMap[ext] || ''
+  }
+
+  const isAllowedFileType = (file: File) => {
+    if (!allowedTypes.length) return true
+    const type = file.type || inferMimeType(file.name)
+    if (!type) return false
+    if (allowedTypes.includes(type)) return true
+    const [group] = type.split('/')
+    return allowedTypes.includes(`${group}/*`)
+  }
 
   const triggerFilePicker = () => {
     const input = fileInputRef.current
@@ -64,7 +96,7 @@ export function FileUpload({
     }
 
     // Validate file type
-    if (!allowedTypes.includes(file.type)) {
+    if (!isAllowedFileType(file)) {
       setError('File type not supported')
       return
     }
@@ -245,7 +277,7 @@ export function FileUpload({
 
               <div className="mt-4 text-xs text-gray-500 dark:text-gray-500">
                 <p className="font-medium mb-1">Supported formats:</p>
-                <p>Images: JPEG, PNG, GIF, WebP</p>
+                <p>Images: JPEG, PNG, GIF, WebP, HEIC</p>
                 <p>Documents: PDF, TXT</p>
                 <p>Audio: MP3, WAV</p>
                 <p>Video: MP4, WebM</p>

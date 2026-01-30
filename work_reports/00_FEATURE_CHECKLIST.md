@@ -47,7 +47,7 @@ Legend: ✅ Working | ⚠️ Partial | ❌ Not implemented | — Not reported
 
 | Feature | Spec | Implementation | Status | Gap | Checklist |
 | --- | --- | --- | --- | --- | --- |
-| Image upload (JPEG, PNG, GIF, WebP) | ✅ | ✅ | ✅ Working |  | [x] |
+| Image upload (JPEG, PNG, GIF, WebP, HEIC) | ✅ | ✅ | ✅ Working |  | [x] |
 | Video upload (MP4, WebM, MOV) - max 100MB | ✅ | ⚠️ | ⚠️ Partial | Files upload, no video handling | [ ] |
 | Audio messages (voice recording) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
 | File sharing (PDF, DOC, ZIP, etc.) - max 50MB | ✅ | ✅ | ✅ Working |  | [x] |

@@ -208,6 +208,7 @@ This document summarizes the development progress, deployments, and resolutions 
 - Avatar upload fixed: multipart buffer handling, correct file URLs, and size limit handling (413 on oversize).
 - File serving now uses `/api/upload/files/*` and allows cross‑origin image rendering (CORP).
 - File upload UI: full drop area clickable, keyboard accessible, and avatar preview modal.
+- Mobile photo library compatibility: accepts HEIC/HEIF and infers MIME when missing.
 
 ### ✅ Local Docker Testing Improvements
 - Added `docker/apiTest.Dockerfile`, `docker/webTest.Dockerfile`, and `docker-compose.local-test.yml`.
