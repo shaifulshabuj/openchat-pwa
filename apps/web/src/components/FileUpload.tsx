@@ -245,9 +245,8 @@ export function FileUpload({
             </div>
           ) : (
             <>
-              <label
-                htmlFor={inputId}
-                className={`w-full border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer flex flex-col items-center ${
+              <div
+                className={`relative w-full border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer flex flex-col items-center ${
                   dragOver 
                     ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
                     : 'border-gray-300 dark:border-gray-600 hover:border-green-400'
@@ -265,18 +264,30 @@ export function FileUpload({
                   }
                 }}
               >
-                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Drag and drop your file here, or click to browse
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">
-                  Maximum {maxSize}MB • Images, Documents, Audio, Video
-                </p>
-                
-                <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-                  Click anywhere in this area to choose a file
-                </p>
-              </label>
+                <input
+                  id={inputId}
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileInputChange}
+                  accept={allowedTypes.join(',')}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                />
+                <div className="pointer-events-none flex flex-col items-center">
+                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    Drag and drop your file here, or tap to choose
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    Maximum {maxSize}MB • Images, Documents, Audio, Video
+                  </p>
+                  <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                    Tap anywhere in this area to select a file
+                  </p>
+                </div>
+              </div>
 
               <div className="mt-4 text-xs text-gray-500 dark:text-gray-500">
                 <p className="font-medium mb-1">Supported formats:</p>
@@ -289,14 +300,6 @@ export function FileUpload({
           )}
         </div>
 
-        <input
-          id={inputId}
-          ref={fileInputRef}
-          type="file"
-          onChange={handleFileInputChange}
-          accept={allowedTypes.join(',')}
-          className="sr-only"
-        />
       </div>
     </div>
   )
