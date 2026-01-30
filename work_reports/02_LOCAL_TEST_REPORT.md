@@ -83,6 +83,11 @@
 - ✅ Mobile photo library upload fix: HEIC/HEIF allowed and MIME inferred when missing.
 - ✅ Improves iOS/Android/Windows photo selection compatibility.
 
+## ⚠️ Latest Progress Update (January 30, 2026 20:05 JST)
+- ⚠️ Mobile browser/PWA photo picker still fails to trigger on iOS/Android (no API call emitted).
+- ✅ Desktop browsers + PWA on macOS/Windows confirmed working.
+- ⏭️ Gap logged for future mobile-specific implementation/permission guidance.
+
 ## 🎯 Executive Summary
 
 **Major enhancements completed:**

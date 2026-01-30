@@ -26,6 +26,7 @@
 - ✅ File upload UX improved: full drop area clickable and keyboard accessible; preview modal added for avatar.
 - ✅ Docker local test stack updated to include db push on startup to avoid migration baseline issues.
 - ✅ Mobile photo selection improved: accept HEIC/HEIF, infer MIME from filename, and allow iOS/Android/Windows libraries.
+- ⚠️ Mobile browser/PWA photo picker still fails on iOS/Android; desktop macOS/Windows works. Marked as gap for future implementation.
 
 ## ✅ **Latest Progress Update (January 28, 2026)**
 - ✅ Contacts UX: camera-based QR scan, permission handling with retry, QR validation before request, and outgoing request state in search.

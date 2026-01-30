@@ -224,6 +224,11 @@ This document catalogs all critical issues discovered during local test report a
 - `apps/web/src/app/profile/page.tsx`
 - `apps/api/src/routes/upload.ts`
 
+## ⚠️ Latest Progress Update (January 30, 2026 20:05 JST)
+- ⚠️ Mobile browser/PWA photo picker still fails to open on iOS/Android (no network request fired).
+- ✅ Desktop macOS/Windows browsers and PWA confirmed working.
+- ⏭️ Logged as a gap for future mobile-specific handling and permission UX.
+
 ### Files Updated (January 28, 2026 01:59 JST)
 - `apps/web/src/components/Contacts/ContactsPanel.tsx` (search filtering + request state)
 
