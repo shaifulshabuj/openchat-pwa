@@ -3,6 +3,7 @@ import { createAdapter } from '@socket.io/redis-adapter'
 import { createClient } from 'redis'
 import { getUserFromToken } from '../utils/auth.js'
 import { prisma } from '../utils/database.js'
+import { parseContactMetadata } from '../services/contacts.js'
 
 export interface AuthenticatedSocket extends Socket {
   userId: string
@@ -24,6 +25,40 @@ interface SendMessageData {
   content: string
   type?: string
   replyToId?: string
+}
+
+const getPrivateContactState = async (chatId: string) => {
+  const contactMessages = await prisma.message.findMany({
+    where: {
+      chatId,
+      type: 'CONTACT'
+    },
+    select: {
+      metadata: true
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    take: 20
+  })
+
+  let requestMeta: ReturnType<typeof parseContactMetadata> | null = null
+  let blockMeta: ReturnType<typeof parseContactMetadata> | null = null
+
+  for (const message of contactMessages) {
+    const metadata = parseContactMetadata(message.metadata)
+    if (!requestMeta && metadata?.kind === 'contact-request') {
+      requestMeta = metadata
+    }
+    if (!blockMeta && metadata?.kind === 'contact-block') {
+      blockMeta = metadata
+    }
+    if (requestMeta && blockMeta) {
+      break
+    }
+  }
+
+  return { requestMeta, blockMeta }
 }
 
 export const setupSocketIO = async (io: Server) => {
@@ -176,6 +211,37 @@ export const setupSocketIO = async (io: Server) => {
         if (!participation || participation.leftAt) {
           socket.emit('error', { message: 'Not authorized to send messages to this chat' })
           return
+        }
+
+        const chat = await prisma.chat.findUnique({
+          where: { id: chatId },
+          select: { type: true }
+        })
+
+        if (!chat) {
+          socket.emit('error', { message: 'Chat not found' })
+          return
+        }
+
+        if (chat.type === 'PRIVATE' && type !== 'CONTACT') {
+          const { requestMeta, blockMeta } = await getPrivateContactState(chatId)
+          const isBlocked = blockMeta?.kind === 'contact-block' && blockMeta.status === 'blocked'
+          if (isBlocked) {
+            socket.emit('error', { message: 'Messaging is blocked for this contact' })
+            return
+          }
+
+          const status =
+            requestMeta?.kind === 'contact-request' ? requestMeta.status : 'accepted'
+          const canSendPendingOutgoing =
+            requestMeta?.kind === 'contact-request' &&
+            requestMeta.status === 'pending' &&
+            requestMeta.fromUserId === userId
+
+          if (status !== 'accepted' && !canSendPendingOutgoing) {
+            socket.emit('error', { message: 'Contact request not accepted' })
+            return
+          }
         }
 
         // Create message in database  

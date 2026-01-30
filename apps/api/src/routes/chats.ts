@@ -3,7 +3,42 @@ import { prisma } from '../utils/database.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { createChatSchema, sendMessageSchema } from '../utils/validation.js'
 import { rateLimits } from '../middleware/security.js'
+import { parseContactMetadata } from '../services/contacts.js'
 import { z } from 'zod'
+
+const getPrivateContactState = async (chatId: string) => {
+  const contactMessages = await prisma.message.findMany({
+    where: {
+      chatId,
+      type: 'CONTACT'
+    },
+    select: {
+      metadata: true
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    take: 20
+  })
+
+  let requestMeta: ReturnType<typeof parseContactMetadata> | null = null
+  let blockMeta: ReturnType<typeof parseContactMetadata> | null = null
+
+  for (const message of contactMessages) {
+    const metadata = parseContactMetadata(message.metadata)
+    if (!requestMeta && metadata?.kind === 'contact-request') {
+      requestMeta = metadata
+    }
+    if (!blockMeta && metadata?.kind === 'contact-block') {
+      blockMeta = metadata
+    }
+    if (requestMeta && blockMeta) {
+      break
+    }
+  }
+
+  return { requestMeta, blockMeta }
+}
 
 export default async function chatRoutes(fastify: FastifyInstance) {
   // Get user's chats
@@ -378,6 +413,36 @@ export default async function chatRoutes(fastify: FastifyInstance) {
 
       if (!participation || participation.leftAt) {
         return reply.status(403).send({ error: 'Not a member of this chat' })
+      }
+
+      const chat = await prisma.chat.findUnique({
+        where: { id: chatId },
+        select: {
+          type: true
+        }
+      })
+
+      if (!chat) {
+        return reply.status(404).send({ error: 'Chat not found' })
+      }
+
+      if (chat.type === 'PRIVATE' && messageData.type !== 'CONTACT') {
+        const { requestMeta, blockMeta } = await getPrivateContactState(chatId)
+        const isBlocked = blockMeta?.kind === 'contact-block' && blockMeta.status === 'blocked'
+        if (isBlocked) {
+          return reply.status(403).send({ error: 'Messaging is blocked for this contact' })
+        }
+
+        const status =
+          requestMeta?.kind === 'contact-request' ? requestMeta.status : 'accepted'
+        const canSendPendingOutgoing =
+          requestMeta?.kind === 'contact-request' &&
+          requestMeta.status === 'pending' &&
+          requestMeta.fromUserId === request.auth.userId
+
+        if (status !== 'accepted' && !canSendPendingOutgoing) {
+          return reply.status(403).send({ error: 'Contact request not accepted' })
+        }
       }
 
       // If replying to a message, verify it exists and is in the same chat

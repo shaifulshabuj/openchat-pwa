@@ -19,6 +19,7 @@ interface MessageContextMenuProps {
   isOwn: boolean
   isEdited: boolean
   createdAt: string
+  isInteractionDisabled?: boolean
   onEdit: (messageId: string, content: string) => void
   onDelete: (messageId: string) => void
   onReply: (messageId: string) => void
@@ -36,6 +37,7 @@ export function MessageContextMenu({
   isOwn, 
   isEdited,
   createdAt,
+  isInteractionDisabled = false,
   onEdit,
   onDelete,
   onReply,
@@ -52,6 +54,7 @@ export function MessageContextMenu({
   const setMenuOpen = isControlled ? onOpenChange! : setIsOpen
 
   const handleCopy = () => {
+    if (isInteractionDisabled) return
     navigator.clipboard.writeText(content)
     toast({
       variant: 'success',
@@ -62,21 +65,25 @@ export function MessageContextMenu({
   }
 
   const handleEdit = () => {
+    if (isInteractionDisabled) return
     onEdit(messageId, content)
     setMenuOpen(false)
   }
 
   const handleDelete = () => {
+    if (isInteractionDisabled) return
     onDelete(messageId)
     setMenuOpen(false)
   }
 
   const handleReply = () => {
+    if (isInteractionDisabled) return
     onReply(messageId)
     setMenuOpen(false)
   }
 
   const handleForward = () => {
+    if (isInteractionDisabled) return
     onForward(messageId)
     setMenuOpen(false)
   }
@@ -108,6 +115,7 @@ export function MessageContextMenu({
       >
         <DropdownMenuItem
           onClick={handleReply}
+          disabled={isInteractionDisabled}
           className="text-sm focus:bg-gray-100 focus:text-gray-900 dark:focus:bg-gray-700 dark:focus:text-gray-50"
         >
           <Reply className="mr-2 h-4 w-4" />
@@ -116,6 +124,7 @@ export function MessageContextMenu({
         
         <DropdownMenuItem
           onClick={handleCopy}
+          disabled={isInteractionDisabled}
           className="text-sm focus:bg-gray-100 focus:text-gray-900 dark:focus:bg-gray-700 dark:focus:text-gray-50"
         >
           <Copy className="mr-2 h-4 w-4" />
@@ -124,6 +133,7 @@ export function MessageContextMenu({
 
         <DropdownMenuItem
           onClick={handleForward}
+          disabled={isInteractionDisabled}
           className="text-sm focus:bg-gray-100 focus:text-gray-900 dark:focus:bg-gray-700 dark:focus:text-gray-50"
         >
           <Forward className="mr-2 h-4 w-4" />
@@ -137,6 +147,7 @@ export function MessageContextMenu({
             {canEdit && (
               <DropdownMenuItem
                 onClick={handleEdit}
+                disabled={isInteractionDisabled}
                 className="text-sm focus:bg-gray-100 focus:text-gray-900 dark:focus:bg-gray-700 dark:focus:text-gray-50"
               >
                 <Edit className="mr-2 h-4 w-4" />
@@ -147,6 +158,7 @@ export function MessageContextMenu({
             
             <DropdownMenuItem 
               onClick={handleDelete} 
+              disabled={isInteractionDisabled}
               className="text-sm text-red-600 dark:text-red-400 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20"
             >
               <Trash2 className="mr-2 h-4 w-4" />

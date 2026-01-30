@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
@@ -26,6 +26,7 @@ import { MessageContextMenu } from '@/components/MessageContextMenu'
 import { EditMessageDialog } from '@/components/EditMessageDialog'
 import { MessageReadIndicator, type ReadStatus } from '@/components/MessageReadIndicator'
 import { reactionsAPI, messageStatusAPI } from '@/lib/api'
+import { contactsAPI } from '@/services/contacts'
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,7 @@ import {
 } from '@/components/ui/dialog'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import { useContactsStore } from '@/store/contacts'
 
 dayjs.extend(relativeTime)
 
@@ -70,9 +72,24 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [forwardSelected, setForwardSelected] = useState<Set<string>>(new Set())
 
   const { user } = useAuthStore()
+  const { refreshAll: refreshContacts } = useContactsStore()
   const { isConnected, on, off, joinChat, sendMessage, startTyping, stopTyping } = useSocket()
   const { toast } = useToast()
   const router = useRouter()
+
+  type ContactMetadata =
+    | {
+        kind: 'contact-request'
+        status: 'pending' | 'accepted' | 'declined'
+        fromUserId: string
+        toUserId: string
+      }
+    | {
+        kind: 'contact-block'
+        status: 'blocked' | 'unblocked'
+        blockerId: string
+        targetUserId: string
+      }
 
   // Extract chatId from async params
   useEffect(() => {
@@ -373,6 +390,14 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user) return
+    if (!canSendMessages) {
+      toast({
+        variant: 'destructive',
+        title: 'Messaging disabled',
+        description: sendDisabledReason,
+      })
+      return
+    }
 
     try {
       // Send via API for persistence
@@ -444,6 +469,14 @@ export default function ChatPage({ params }: ChatPageProps) {
   }
 
   const handleFileUploaded = (fileInfo: any) => {
+    if (!canSendMessages) {
+      toast({
+        variant: 'destructive',
+        title: 'Messaging disabled',
+        description: sendDisabledReason,
+      })
+      return
+    }
     // Send file message
     const fileMessage = `📎 ${fileInfo.filename}`
     if (isConnected) {
@@ -692,6 +725,112 @@ export default function ChatPage({ params }: ChatPageProps) {
     return undefined
   }
 
+  const parseContactMetadata = (metadata: Message['metadata']) => {
+    const parsed = normalizeMetadata(metadata)
+    if (!parsed || typeof parsed !== 'object' || !('kind' in parsed)) return null
+    return parsed as ContactMetadata
+  }
+
+  const contactState = useMemo(() => {
+    if (!chat || chat.type !== 'PRIVATE') {
+      return {
+        status: 'accepted' as const,
+        isBlocked: false,
+        blockedByMe: false,
+        pendingIncoming: false,
+        pendingOutgoing: false,
+        requestMessageId: null as string | null
+      }
+    }
+
+    let requestMeta: ContactMetadata | null = null
+    let blockMeta: ContactMetadata | null = null
+    let requestMessageId: string | null = null
+
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const message = messages[i]
+      if (message.type !== 'CONTACT') continue
+      const meta = parseContactMetadata(message.metadata)
+      if (!requestMeta && meta?.kind === 'contact-request') {
+        requestMeta = meta
+        requestMessageId = message.id
+      }
+      if (!blockMeta && meta?.kind === 'contact-block') {
+        blockMeta = meta
+      }
+      if (requestMeta && blockMeta) break
+    }
+
+    const status =
+      requestMeta?.kind === 'contact-request' ? requestMeta.status : 'accepted'
+    const isBlocked = blockMeta?.kind === 'contact-block' && blockMeta.status === 'blocked'
+    const blockedByMe = isBlocked && blockMeta?.kind === 'contact-block' && blockMeta.blockerId === user?.id
+    const pendingIncoming =
+      requestMeta?.kind === 'contact-request' &&
+      requestMeta.status === 'pending' &&
+      requestMeta.toUserId === user?.id
+    const pendingOutgoing =
+      requestMeta?.kind === 'contact-request' &&
+      requestMeta.status === 'pending' &&
+      requestMeta.fromUserId === user?.id
+
+    return {
+      status,
+      isBlocked,
+      blockedByMe,
+      pendingIncoming,
+      pendingOutgoing,
+      requestMessageId
+    }
+  }, [chat, messages, user?.id])
+
+  const canSendMessages =
+    chat?.type !== 'PRIVATE' ||
+    (!contactState.isBlocked &&
+      (contactState.status === 'accepted' || contactState.pendingOutgoing))
+
+  const sendDisabledReason = contactState.isBlocked
+    ? contactState.blockedByMe
+      ? 'You blocked this contact. Unblock to send messages.'
+      : 'You cannot send messages to this contact.'
+    : contactState.pendingIncoming
+      ? 'Accept the contact request to start chatting.'
+      : 'Contact request not accepted.'
+
+  const handleContactRespond = async (requestId: string, status: 'accepted' | 'declined') => {
+    try {
+      const result = await contactsAPI.respondToRequest(requestId, status)
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (msg.id !== requestId) return msg
+          const meta = parseContactMetadata(msg.metadata)
+          if (!meta || meta.kind !== 'contact-request') return msg
+          return {
+            ...msg,
+            metadata: { ...meta, status },
+            content:
+              status === 'accepted' ? 'Contact request accepted' : 'Contact request declined',
+          }
+        })
+      )
+      toast({
+        title: status === 'accepted' ? 'Contact accepted' : 'Contact declined',
+        description: result?.data?.status
+          ? `Request ${status}.`
+          : `Request ${status}.`,
+      })
+      await refreshContacts()
+    } catch (error) {
+      const errorMessage =
+        (error as any).response?.data?.error || 'Unable to update contact request.'
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage,
+      })
+    }
+  }
+
   useEffect(() => {
     if (!forwardMessage) return
     const loadChats = async () => {
@@ -802,6 +941,57 @@ export default function ChatPage({ params }: ChatPageProps) {
     )
   }
 
+  const renderContactMessage = (
+    message: Message,
+    metadata: ContactMetadata,
+    isOwn: boolean
+  ) => {
+    if (metadata.kind === 'contact-block') {
+      return (
+        <p className={`text-sm ${isOwn ? 'text-white/90' : 'text-gray-700 dark:text-gray-200'}`}>
+          {metadata.status === 'blocked' ? 'Contact blocked' : 'Contact unblocked'}
+        </p>
+      )
+    }
+
+    if (metadata.kind !== 'contact-request') return null
+
+    const isIncoming = metadata.toUserId === user?.id
+    const isPending = metadata.status === 'pending'
+
+    return (
+      <div className="space-y-2">
+        <p className={`text-sm ${isOwn ? 'text-white/90' : 'text-gray-800 dark:text-gray-200'}`}>
+          {isPending ? 'Contact request' : 'Contact request update'}
+        </p>
+        {isPending ? (
+          isIncoming ? (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant={isOwn ? 'secondary' : 'outline'}
+                onClick={() => handleContactRespond(message.id, 'declined')}
+              >
+                Decline
+              </Button>
+              <Button size="sm" onClick={() => handleContactRespond(message.id, 'accepted')}>
+                Accept
+              </Button>
+            </div>
+          ) : (
+            <p className={`text-xs ${isOwn ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}`}>
+              Waiting for acceptance.
+            </p>
+          )
+        ) : (
+          <p className={`text-xs ${isOwn ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}`}>
+            Request {metadata.status}.
+          </p>
+        )}
+      </div>
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -884,6 +1074,12 @@ export default function ChatPage({ params }: ChatPageProps) {
             messages.map((message) => {
               const isOwn = message.senderId === user?.id
               const showAvatar = !isOwn
+              const contactMetadata = message.type === 'CONTACT'
+                ? parseContactMetadata(message.metadata)
+                : null
+              const contactContent = contactMetadata
+                ? renderContactMessage(message, contactMetadata, isOwn)
+                : null
 
               return (
                 <div
@@ -926,7 +1122,9 @@ export default function ChatPage({ params }: ChatPageProps) {
                             : ''
                         }`}
                       >
-                        {message.type === 'FILE' || message.content.startsWith('📎') ? (
+                        {contactContent ? (
+                          contactContent
+                        ) : message.type === 'FILE' || message.content.startsWith('📎') ? (
                           renderFileMessage(message)
                         ) : (
                           <>
@@ -994,6 +1192,7 @@ export default function ChatPage({ params }: ChatPageProps) {
                           isOwn={isOwn}
                           isEdited={message.isEdited}
                           createdAt={message.createdAt}
+                          isInteractionDisabled={contactState.isBlocked}
                           onEdit={handleEditMessage}
                           onDelete={handleDeleteMessage}
                           onReply={handleReplyToMessage}
@@ -1014,6 +1213,7 @@ export default function ChatPage({ params }: ChatPageProps) {
                       reactions={(message as any).reactions || []}
                       onAddReaction={handleAddReaction}
                       onRemoveReaction={handleRemoveReaction}
+                      disabled={contactState.isBlocked}
                     />
                   </div>
                 </div>
@@ -1025,6 +1225,11 @@ export default function ChatPage({ params }: ChatPageProps) {
 
         {/* Message Input */}
         <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 pb-[calc(env(safe-area-inset-bottom)+8px)]">
+          {!canSendMessages && chat?.type === 'PRIVATE' && (
+            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-900/60 dark:bg-amber-900/30 dark:text-amber-100">
+              {sendDisabledReason}
+            </div>
+          )}
           {replyToMessage && (
             <div className="mb-3 flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
               <div className="min-w-0">
@@ -1052,7 +1257,8 @@ export default function ChatPage({ params }: ChatPageProps) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowFileUpload(true)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+              disabled={!canSendMessages}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Paperclip className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
@@ -1069,18 +1275,22 @@ export default function ChatPage({ params }: ChatPageProps) {
                 }}
                 onFocus={handleTyping}
                 onBlur={handleStopTyping}
-                placeholder="Type a message..."
-                className="pr-12 rounded-full"
+                placeholder={canSendMessages ? 'Type a message...' : sendDisabledReason}
+                disabled={!canSendMessages}
+                className="pr-12 rounded-full disabled:opacity-60"
               />
 
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
+              <button
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full disabled:opacity-40"
+                disabled={!canSendMessages}
+              >
                 <Smile className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </button>
             </div>
 
             <Button
               onClick={handleSendMessage}
-              disabled={!newMessage.trim() || !isConnected}
+              disabled={!newMessage.trim() || !isConnected || !canSendMessages}
               className="rounded-full w-10 h-10 p-0 bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300"
             >
               <Send className="w-5 h-5" />

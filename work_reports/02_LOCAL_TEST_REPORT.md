@@ -40,6 +40,18 @@
 ### Test Commands & Results (January 27, 2026 21:30 JST)
 - `DATABASE_URL=postgresql://openchat:password@localhost:5433/openchat_test REDIS_URL=redis://localhost:6380 npm --prefix apps/api test -- --run` → **PASS** (36 passed / 1 skipped)
 
+## ✅ Latest Progress Update (January 30, 2026 09:28 JST)
+- ✅ Verified contact request messaging rules with Playwright UI tests.
+- ✅ Incoming request: Accept/Decline visible in chat and input disabled until accepted.
+- ✅ Outgoing pending request: sender can type/send messages.
+- ✅ Blocked contact: message input disabled; reactions + message actions (reply/copy/forward/edit/delete) disabled; history remains visible.
+- ✅ Contact acceptance in-chat reflects in Contacts list (status updated after refresh).
+
+### Test Notes (January 30, 2026 09:28 JST)
+- Environment: Docker-based local deploy (localhost:3000).
+- Test users created: `pendingout0130`, `pendingin0130`, `pendingtarget0130`.
+- Flows exercised: register → login → request → accept in chat → verify contacts; outgoing pending send; block flow and blocked UI.
+
 ## 🎯 Executive Summary
 
 **Major enhancements completed:**
