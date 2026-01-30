@@ -251,6 +251,7 @@ export default function ProfilePage() {
           onClose={() => setShowAvatarUpload(false)}
           maxSize={5}
           allowedTypes={[
+            'image/*',
             'image/jpeg',
             'image/png',
             'image/gif',

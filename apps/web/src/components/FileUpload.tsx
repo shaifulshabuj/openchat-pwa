@@ -67,8 +67,11 @@ export function FileUpload({
 
   const isAllowedFileType = (file: File) => {
     if (!allowedTypes.length) return true
+    const allowAnyImage = allowedTypes.includes('image/*')
     const type = file.type || inferMimeType(file.name)
-    if (!type) return false
+    if (!type) {
+      return allowAnyImage
+    }
     if (allowedTypes.includes(type)) return true
     const [group] = type.split('/')
     return allowedTypes.includes(`${group}/*`)
