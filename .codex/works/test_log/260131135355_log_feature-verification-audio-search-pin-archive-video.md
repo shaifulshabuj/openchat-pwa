@@ -36,3 +36,29 @@
 ## Recommended Follow-ups
 - Implement or expose `/api/chats/:id/messages/search` route to satisfy MessageSearch.
 - Add a seeded video message to enable VideoPlayer control verification.
+
+---
+
+## Retest (Playwright MCP)
+**Timestamp:** 2026-01-31 14:45:00
+**Environment:** Docker local test stack (web: http://localhost:3000, api: http://localhost:8080)
+
+### ✅ MessageSearch
+- Opened chat and searched for "modern".
+- Results list rendered with "1 of 1" navigation and highlighted match.
+- Clickable result present in search dropdown.
+
+### ✅ AudioRecorder UI
+- Audio recorder panel opened from chat footer.
+- "Permission Denied" state displayed with timer and Cancel button (permission not granted in Playwright).
+
+### ✅ Chat pin & archive
+- Chat item menu showed Pin/Archive.
+- Pin action displayed toast and pinned icon in chat row.
+- Archive action displayed toast and removed chat from main list.
+
+### ⚠️ VideoPlayer controls
+- Not verified in this run (no video message available to open).
+
+### Notes
+- Console warnings about blocked image resources persisted but did not block interactions.

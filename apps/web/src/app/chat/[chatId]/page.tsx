@@ -19,6 +19,8 @@ import {
 import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { MentionInput } from '@/components/MentionInput'
+import { MentionHighlight } from '@/components/MentionHighlight'
 import { useSocket } from '@/hooks/useSocket'
 import { useToast } from '@/hooks/use-toast'
 import { chatAPI, type Chat, type Message } from '@/lib/api'
@@ -351,6 +353,20 @@ export default function ChatPage({ params }: ChatPageProps) {
         }
       )
 
+      // Listen for mention notifications
+      on('mention-notification', (data: any) => {
+        const { messageId, chatId: mentionChatId, mentionedBy, content, chatName } = data
+        // Only show notification if not on the current chat page
+        if (mentionChatId !== chatId) {
+          const { showToast } = require('@/hooks/use-toast')
+          showToast({
+            title: `${mentionedBy.displayName} mentioned you`,
+            description: `In ${chatName}: ${content.length > 50 ? content.substring(0, 50) + '...' : content}`,
+            variant: 'default',
+          })
+        }
+      })
+
       return () => {
         off('new-message')
         off('user-typing')
@@ -361,6 +377,7 @@ export default function ChatPage({ params }: ChatPageProps) {
         off('reaction-added')
         off('reaction-removed')
         off('messages-read')
+        off('mention-notification')
       }
     }
   }, [isConnected, chatId, joinChat, on, off, user?.id])
@@ -1391,7 +1408,7 @@ export default function ChatPage({ params }: ChatPageProps) {
                               )
                             })()}
                             <p className="text-sm whitespace-pre-wrap">
-                              {message.content}
+                              <MentionHighlight content={message.content} />
                               {(() => {
                                 const content = message.content || ''
                                 const endsWithEdited = /\(edited\)\s*$/i.test(content)
@@ -1503,21 +1520,35 @@ export default function ChatPage({ params }: ChatPageProps) {
             </button>
 
             <div className="flex-1 relative">
-              <Input
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    handleSendMessage()
-                  }
-                }}
-                onFocus={handleTyping}
-                onBlur={handleStopTyping}
-                placeholder={canSendMessages ? 'Type a message...' : sendDisabledReason}
-                disabled={!canSendMessages}
-                className="pr-12 rounded-full disabled:opacity-60"
-              />
+              {isGroupChat ? (
+                <MentionInput
+                  chatId={chatId}
+                  value={newMessage}
+                  onChange={setNewMessage}
+                  onSubmit={handleSendMessage}
+                  onFocus={handleTyping}
+                  onBlur={handleStopTyping}
+                  placeholder={canSendMessages ? 'Type a message...' : sendDisabledReason}
+                  disabled={!canSendMessages}
+                  className="pr-12 rounded-lg disabled:opacity-60"
+                />
+              ) : (
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSendMessage()
+                    }
+                  }}
+                  onFocus={handleTyping}
+                  onBlur={handleStopTyping}
+                  placeholder={canSendMessages ? 'Type a message...' : sendDisabledReason}
+                  disabled={!canSendMessages}
+                  className="pr-12 rounded-full disabled:opacity-60"
+                />
+              )}
 
               <button
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full disabled:opacity-40"

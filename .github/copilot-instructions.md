@@ -174,6 +174,7 @@ codex apply "Run Playwright UI flow per .codex/skills/openchat-playwright-ui-tes
 1. **Run Skill Quality Gates:**
    - **For feature verification (preferred):** [# Assign codex to run tests and checks, then extract result and logs]
      * Use Docker-based local test stack from `.codex/skills/openchat-docker-local-testing/SKILL.md`.
+     * Follow `.github/skills/docker-based-testing.md` for all testing commands (unit, integration, UI).
      * Verify features in-browser using Playwright MCP (`openchat-playwright-ui-testing`).
      * Log the Playwright run to `.codex/works/test_log/` using `YYMMDDHHMMSS_log_<testing item name>.md`.
    - **For Docker tasks:**
@@ -183,12 +184,11 @@ codex apply "Run Playwright UI flow per .codex/skills/openchat-playwright-ui-tes
      * Logs clean: `docker compose logs --tail=50 | grep -i error`
 
    - **For API tasks:**
-     * Tests pass: `pnpm --filter openchat-api test`
+     * Run tests via Docker per `.github/skills/docker-based-testing.md` (no local `pnpm`/`npm` runs).
      * Endpoint works: `curl -X POST http://localhost:8080/api/<endpoint> -H "Content-Type: application/json" -d '<payload>'`
-     * Types valid: `pnpm type-check`
 
    - **For UI tasks:**
-     * Build succeeds: `pnpm --filter openchat-web build`
+     * Build/test using Docker per `.github/skills/docker-based-testing.md` (no local `pnpm`/`npm` builds).
      * No console errors: Check browser console during manual test
      * Responsive: Test mobile viewport
 
@@ -446,6 +446,18 @@ When a task requires multiple skills (e.g., Docker setup + Playwright validation
 
 2. **Explicit Handoff:**
    - Document in Codex instruction: "After Docker setup verified, proceed with Playwright validation per skill workflow"
+
+### **Docker-Only Testing Policy**
+When running any unit, integration, or Playwright testing:
+
+1. **Use Docker-based testing only:**
+   - Always follow `.github/skills/docker-based-testing.md`.
+   - Do **not** run local `pnpm`, `npm`, or `next` build/run commands for testing.
+   - Do **not** use local `pnpm test` or `pnpm build` outside Docker.
+
+2. **Playwright runs still required:**
+   - Execute Playwright MCP flows against the Docker-based web app.
+   - Log Playwright output to `.codex/works/test_log/YYMMDDHHMMSS_log_<testing item name>.md`.
 
 ### **Spec-Driven Development**
 When implementing features from specification:

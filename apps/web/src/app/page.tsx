@@ -10,6 +10,8 @@ import {
   Search,
   MoreHorizontal,
   Plus,
+  MessageCircle,
+  UserPlus,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { useSocket } from '@/hooks/useSocket'
@@ -18,14 +20,24 @@ import { Input } from '@/components/ui/input'
 import { ChatList } from '@/components/ChatList'
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle'
 import { ContactsPanel } from '@/components/Contacts/ContactsPanel'
+import { chatAPI } from '@/lib/api'
+import { useToast } from '@/hooks/use-toast'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('chats')
   const [message, setMessage] = useState('')
   const [mounted, setMounted] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
+  const [showGroupModal, setShowGroupModal] = useState(false)
   const { user, isAuthenticated, isLoading, logout, checkAuth } = useAuthStore()
   const { isConnected, isOnline, joinChat, sendMessage } = useSocket()
+  const { toast } = useToast()
   const router = useRouter()
 
   // Handle hydration mismatch for static export
@@ -50,6 +62,40 @@ export default function Home() {
   const handleLogout = async () => {
     await logout()
     router.push('/auth/login')
+  }
+
+  const handleCreateGroup = () => {
+    const groupName = prompt('Enter group name:')
+    if (!groupName?.trim()) return
+
+    const createGroup = async () => {
+      try {
+        const response = await chatAPI.createChat({
+          type: 'GROUP',
+          name: groupName.trim(),
+          participants: [] // Start with empty group, add members later
+        })
+
+        if (response.success) {
+          toast({
+            title: 'Group created',
+            description: `"${groupName}" group has been created successfully.`,
+            variant: 'default'
+          })
+          
+          // Navigate to the new group chat
+          router.push(`/chat/${response.data.id}`)
+        }
+      } catch (error: any) {
+        toast({
+          title: 'Failed to create group',
+          description: error.response?.data?.error || error.message || 'Something went wrong',
+          variant: 'destructive'
+        })
+      }
+    }
+
+    createGroup()
   }
 
   const handleSendMessage = () => {
@@ -153,12 +199,23 @@ export default function Home() {
 
               {/* Floating Action Button */}
               <div className="absolute bottom-6 right-6">
-                <button
-                  onClick={() => setShowContactModal(true)}
-                  className="w-14 h-14 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
-                >
-                  <Plus className="w-6 h-6" />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="w-14 h-14 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors">
+                      <Plus className="w-6 h-6" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="mb-2">
+                    <DropdownMenuItem onClick={() => setShowContactModal(true)}>
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      New Message
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleCreateGroup}>
+                      <Users className="w-4 h-4 mr-2" />
+                      Create Group
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           )}

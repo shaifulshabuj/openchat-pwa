@@ -5,6 +5,7 @@ import { authMiddleware } from '../middleware/auth.js'
 import { createChatSchema, sendMessageSchema } from '../utils/validation.js'
 import { rateLimits } from '../middleware/security.js'
 import { parseContactMetadata } from '../services/contacts.js'
+import { extractMentionUsernames } from '../utils/mentions.js'
 import { z } from 'zod'
 
 const getPrivateContactState = async (chatId: string) => {
@@ -43,6 +44,38 @@ const getPrivateContactState = async (chatId: string) => {
 
 const generateInviteCode = () => {
   return randomBytes(9).toString('base64url')
+}
+
+const resolveMentionsForChat = async (chatId: string, usernames: string[], senderId: string) => {
+  if (usernames.length === 0) return []
+
+  const participants = await prisma.chatParticipant.findMany({
+    where: {
+      chatId,
+      leftAt: null
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          displayName: true
+        }
+      }
+    }
+  })
+
+  const usernameMap = new Map(
+    participants.map((participant) => [participant.user.username.toLowerCase(), participant.user])
+  )
+
+  const mentions = usernames
+    .map((username) => usernameMap.get(username))
+    .filter((user): user is { id: string; username: string; displayName: string } => !!user)
+    .filter((user) => user.id !== senderId)
+
+  const unique = new Map(mentions.map((user) => [user.id, user]))
+  return Array.from(unique.values())
 }
 
 export default async function chatRoutes(fastify: FastifyInstance) {
@@ -295,6 +328,64 @@ export default async function chatRoutes(fastify: FastifyInstance) {
     }
   })
 
+  // Get group chat members (for mentions autocomplete)
+  fastify.get('/:chatId/members', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { chatId } = request.params
+
+      const participation = await prisma.chatParticipant.findUnique({
+        where: {
+          userId_chatId: {
+            userId: request.auth.userId,
+            chatId
+          }
+        }
+      })
+
+      if (!participation || participation.leftAt) {
+        return reply.status(403).send({ error: 'Not a member of this chat' })
+      }
+
+      const chat = await prisma.chat.findUnique({
+        where: { id: chatId },
+        select: { type: true }
+      })
+
+      if (!chat || chat.type !== 'GROUP') {
+        return reply.status(400).send({ error: 'Mentions are only available for group chats' })
+      }
+
+      const members = await prisma.chatParticipant.findMany({
+        where: {
+          chatId,
+          leftAt: null
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatar: true,
+              status: true
+            }
+          }
+        },
+        orderBy: {
+          joinedAt: 'asc'
+        }
+      })
+
+      return reply.send({
+        success: true,
+        data: members.map((member) => member.user)
+      })
+    } catch (error) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
   // Get chat messages
   fastify.get('/:chatId/messages', { preHandler: authMiddleware }, async (request: any, reply) => {
     try {
@@ -516,7 +607,8 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       const chat = await prisma.chat.findUnique({
         where: { id: chatId },
         select: {
-          type: true
+          type: true,
+          name: true
         }
       })
 
@@ -595,6 +687,26 @@ export default async function chatRoutes(fastify: FastifyInstance) {
           } : false
         }
       })
+
+      // Process mentions for group chats
+      if (chat.type === 'GROUP') {
+        const mentionUsernames = extractMentionUsernames(messageData.content)
+        if (mentionUsernames.length > 0) {
+          const mentionedUsers = await resolveMentionsForChat(chatId, mentionUsernames, request.auth.userId)
+          
+          // Send mention notifications to mentioned users
+          const io = (fastify as any).io
+          for (const user of mentionedUsers) {
+            io.to(`user:${user.id}`).emit('mention-notification', {
+              messageId: message.id,
+              chatId,
+              mentionedBy: message.sender,
+              content: messageData.content,
+              chatName: chat.name || 'Group Chat'
+            })
+          }
+        }
+      }
 
       // Update chat's updatedAt timestamp
       await prisma.chat.update({
@@ -1441,56 +1553,6 @@ export default async function chatRoutes(fastify: FastifyInstance) {
           avatar: updatedChat.avatar
         }
       })
-    } catch (error: any) {
-      fastify.log.error(error)
-      return reply.status(500).send({ error: 'Internal server error' })
-    }
-  })
-
-  // Get group members with roles
-  fastify.get('/:chatId/members', { preHandler: authMiddleware }, async (request: any, reply) => {
-    try {
-      const { chatId } = request.params
-
-      // Check if user is a member
-      const memberCheck = await prisma.chatParticipant.findFirst({
-        where: { userId: request.auth.userId, chatId, leftAt: null }
-      })
-
-      if (!memberCheck) {
-        return reply.status(403).send({ error: 'Not a member of this group' })
-      }
-
-      const members = await prisma.chatParticipant.findMany({
-        where: { chatId, leftAt: null },
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              displayName: true,
-              avatar: true,
-              status: true
-            }
-          }
-        }
-      })
-
-      const admins = await prisma.chatAdmin.findMany({
-        where: { chatId },
-        select: { userId: true }
-      })
-
-      const adminUserIds = new Set(admins.map(a => a.userId))
-
-      const membersWithRoles = members.map(member => ({
-        id: member.id,
-        user: member.user,
-        joinedAt: member.joinedAt,
-        isAdmin: adminUserIds.has(member.userId)
-      }))
-
-      return reply.send({ success: true, data: membersWithRoles })
     } catch (error: any) {
       fastify.log.error(error)
       return reply.status(500).send({ error: 'Internal server error' })
