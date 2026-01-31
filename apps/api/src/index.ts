@@ -14,6 +14,7 @@ import messageStatusRoutes from './routes/messageStatus.js'
 import docsRoutes from './routes/docs.js'
 import healthRoutes from './routes/health.js'
 import contactRoutes from './routes/contacts.js'
+import postRoutes from './routes/posts.js'
 import securityPlugin from './middleware/security.js'
 import { rateLimitPlugin } from './middleware/rateLimit.js'
 import { validateEnv } from './utils/env.js'
@@ -85,6 +86,7 @@ export const build = async () => {
   app.register(reactionRoutes, { prefix: '/api/reactions' })
   app.register(messageStatusRoutes, { prefix: '/api/message-status' })
   app.register(contactRoutes, { prefix: '/api/contacts' })
+  app.register(postRoutes, { prefix: '/api/posts' })
   app.register(docsRoutes)
   app.register(healthRoutes)
 

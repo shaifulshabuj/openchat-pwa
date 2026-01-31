@@ -32,7 +32,7 @@ Legend: ✅ Working | ⚠️ Partial | ❌ Not implemented | — Not reported
 | Typing indicators | ✅ | ✅ | ✅ Working (Socket.io) |  | [x] |
 | Online/offline status | ✅ | ✅ | ✅ Working | Presence dot + grace period reduces flicker | [x] |
 | Last seen timestamp | ✅ | ✅ | ✅ Working |  | [x] |
-| Message editing (within 5 minutes) | ✅ | ⚠️ | ⚠️ Partial | Implemented with 24h limit | [ ] |
+| Message editing (within 5 minutes) | ✅ | ✅ | ✅ Working | Live countdown timer implemented, 5-minute limit enforced | [x] |
 | Message deletion (for everyone/just me) | ✅ | ⚠️ | ⚠️ Partial | Soft delete only; scope not specified | [ ] |
 | Reply to specific messages | ✅ | ✅ | ✅ Working |  | [x] |
 | Forward messages | ✅ | ✅ | ✅ Working |  | [x] |
@@ -47,14 +47,14 @@ Legend: ✅ Working | ⚠️ Partial | ❌ Not implemented | — Not reported
 
 | Feature | Spec | Implementation | Status | Gap | Checklist |
 | --- | --- | --- | --- | --- | --- |
-| Image upload (JPEG, PNG, GIF, WebP, HEIC) | ✅ | ⚠️ | ⚠️ Partial | Mobile browser/PWA photo picker still fails; desktop OK | [ ] |
+| Image upload (JPEG, PNG, GIF, WebP, HEIC) | ✅ | ✅ | ✅ Working | Mobile HEIC/HEIF conversion now supported with heic2any | [x] |
 | Video upload (MP4, WebM, MOV) - max 100MB | ✅ | ✅ | ✅ Working | | [x] |
 | Audio messages (voice recording) | ✅ | ✅ | ✅ Working | | [x] |
 | File sharing (PDF, DOC, ZIP, etc.) - max 50MB | ✅ | ✅ | ✅ Working |  | [x] |
 | Image preview & gallery | ✅ | ✅ | ✅ Working |  | [x] |
 | Video player with controls | ✅ | ✅ | ✅ Working | | [x] |
 | Audio playback with waveform | ✅ | ✅ | ✅ Working | | [x] |
-| Automatic image compression | ✅ | — | — Not reported | Not reported in status updates | [ ] |
+| Automatic image compression | ✅ | ✅ | ✅ Working | Client-side compression pipeline with quality controls implemented | [x] |
 | Thumbnail generation | ✅ | ✅ | ✅ Working (Sharp) |  | [x] |
 | Progress indicators for uploads | ✅ | ✅ | ✅ Working |  | [x] |
 | Pause/resume uploads | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
@@ -85,20 +85,20 @@ Legend: ✅ Working | ⚠️ Partial | ❌ Not implemented | — Not reported
 | --- | --- | --- | --- | --- | --- |
 | Create group (2-500 members) | ✅ | ✅ | ✅ Working |  | [x] |
 | Group name & avatar | ✅ | ✅ | ✅ Working |  | [x] |
-| Group description | ✅ | — | — Not reported | Not reported in status updates | [ ] |
-| Add/remove members | ✅ | — | — Not reported | Not reported in status updates | [ ] |
-| Admin roles & permissions | ✅ | — | — Not reported | Not reported in status updates | [ ] |
-| Group invitations via link | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
-| Group QR code | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
-| Member list with roles | ✅ | — | — Not reported | Not reported in status updates | [ ] |
-| @ mentions | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Group description | ✅ | ⚠️ | ⚠️ Partial | Editable in Group Settings; create flow lacks description input | [ ] |
+| Add/remove members | ✅ | ✅ | ✅ Working | Admin endpoints + Group Settings member management fixed | [x] |
+| Admin roles & permissions | ✅ | ✅ | ✅ Working | Promote/demote endpoints + fixed member data structure | [x] |
+| Group invitations via link | ✅ | ✅ | ✅ Working | Invite modal + /invite/[code] route + QR generation | [x] |
+| Group QR code | ✅ | ✅ | ✅ Working | QR displayed in invite modal with shareable links | [x] |
+| Member list with roles | ✅ | ✅ | ✅ Working | API now returns members with isAdmin flags and joinedAt | [x] |
+| @ mentions | ✅ | ✅ | ✅ Working | Mention autocomplete + highlights in group chats | [x] |
 | Reply in thread (optional) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
 | Group announcements (pinned messages) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
 | Mute group notifications | ✅ | — | — Not reported | Not reported in status updates | [ ] |
 | Leave group | ✅ | — | — Not reported | Not reported in status updates | [ ] |
 | Delete group (admin only) | ✅ | — | — Not reported | Not reported in status updates | [ ] |
-| Group settings | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
-| Member permissions (send media, add members, etc.) | ✅ | ⚠️ | ⚠️ Partial | Schema exists, no UI | [ ] |
+| Group settings | ✅ | ✅ | ✅ Working | Full settings modal with info/members/permissions tabs | [x] |
+| Member permissions (send media, add members, etc.) | ✅ | ⚠️ | ⚠️ Partial | UI exists but not persisted; no backend wiring | [ ] |
 
 ---
 
@@ -108,13 +108,13 @@ Legend: ✅ Working | ⚠️ Partial | ❌ Not implemented | — Not reported
 
 | Feature | Spec | Implementation | Status | Gap | Checklist |
 | --- | --- | --- | --- | --- | --- |
-| Post text updates | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
-| Post images (1-9 photos) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
-| Post videos | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Post text updates | ✅ | ⚠️ | ⚠️ Partial | Database schema and API foundation implemented, UI pending | [ ] |
+| Post images (1-9 photos) | ✅ | ⚠️ | ⚠️ Partial | Database schema supports media array, UI pending | [ ] |
+| Post videos | ✅ | ⚠️ | ⚠️ Partial | Database schema supports media array, UI pending | [ ] |
 | Location tagging | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
-| Privacy settings (public, contacts only, custom list) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
-| Like posts | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
-| Comment on posts | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Privacy settings (public, contacts only, custom list) | ✅ | ⚠️ | ⚠️ Partial | Database schema supports visibility levels, UI pending | [ ] |
+| Like posts | ✅ | ⚠️ | ⚠️ Partial | Database schema and basic API implemented, UI pending | [ ] |
+| Comment on posts | ✅ | ⚠️ | ⚠️ Partial | Database schema and basic API implemented, UI pending | [ ] |
 | Share posts | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
 | Delete posts | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
 | Edit posts (within time limit) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |

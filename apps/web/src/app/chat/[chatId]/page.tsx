@@ -23,7 +23,7 @@ import { MentionInput } from '@/components/MentionInput'
 import { MentionHighlight } from '@/components/MentionHighlight'
 import { useSocket } from '@/hooks/useSocket'
 import { useToast } from '@/hooks/use-toast'
-import { chatAPI, type Chat, type Message } from '@/lib/api'
+import { chatAPI, type Chat, type Message, type MessageDeleteScope } from '@/lib/api'
 import { FileUpload } from '@/components/FileUpload'
 import { MessageReactions } from '@/components/MessageReactions'
 import { MessageContextMenu } from '@/components/MessageContextMenu'
@@ -61,7 +61,11 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [isTyping, setIsTyping] = useState<Array<{ userId: string; username: string }>>([])
   const [showFileUpload, setShowFileUpload] = useState(false)
   const [showAudioRecorder, setShowAudioRecorder] = useState(false)
-  const [editingMessage, setEditingMessage] = useState<{ id: string; content: string } | null>(null)
+  const [editingMessage, setEditingMessage] = useState<{
+    id: string
+    content: string
+    createdAt: string
+  } | null>(null)
   const [isEditLoading, setIsEditLoading] = useState(false)
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null)
   const [messageReadStatus, setMessageReadStatus] = useState<Record<string, ReadStatus>>({})
@@ -251,6 +255,22 @@ export default function ChatPage({ params }: ChatPageProps) {
       )
 
       on(
+        'message-deleted-for-me',
+        ({
+          messageId,
+          chatId: eventChatId,
+        }: {
+          messageId: string
+          chatId: string
+          deletedBy: string
+        }) => {
+          if (eventChatId === chatId) {
+            setMessages((prev) => prev.filter((msg) => msg.id !== messageId))
+          }
+        }
+      )
+
+      on(
         'messages-read',
         ({ messageIds, chatId: eventChatId }: { messageIds: string[]; chatId: string }) => {
           if (eventChatId === chatId) {
@@ -374,6 +394,7 @@ export default function ChatPage({ params }: ChatPageProps) {
         off('user-status-changed')
         off('message-edited')
         off('message-deleted')
+        off('message-deleted-for-me')
         off('reaction-added')
         off('reaction-removed')
         off('messages-read')
@@ -733,8 +754,8 @@ export default function ChatPage({ params }: ChatPageProps) {
     }
   }
 
-  const handleEditMessage = (messageId: string, content: string) => {
-    setEditingMessage({ id: messageId, content })
+  const handleEditMessage = (messageId: string, content: string, createdAt: string) => {
+    setEditingMessage({ id: messageId, content, createdAt })
   }
 
   const handleSaveEdit = async (messageId: string, content: string) => {
@@ -773,23 +794,30 @@ export default function ChatPage({ params }: ChatPageProps) {
     }
   }
 
-  const handleDeleteMessage = async (messageId: string) => {
+  const handleDeleteMessage = async (messageId: string, scope: MessageDeleteScope) => {
     if (!chatId) return
 
     try {
-      await chatAPI.deleteMessage(chatId, messageId)
+      await chatAPI.deleteMessage(chatId, messageId, scope)
 
       // Update local state
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === messageId ? { ...msg, content: '[Message deleted]', isDeleted: true } : msg
+      if (scope === 'me') {
+        setMessages((prev) => prev.filter((msg) => msg.id !== messageId))
+      } else {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === messageId ? { ...msg, content: '[Message deleted]', isDeleted: true } : msg
+          )
         )
-      )
+      }
 
       toast({
         variant: 'success',
-        title: 'Message deleted',
-        description: 'The message has been deleted successfully.',
+        title: scope === 'me' ? 'Message removed' : 'Message deleted',
+        description:
+          scope === 'me'
+            ? 'The message has been removed for you.'
+            : 'The message has been deleted for everyone.',
       })
     } catch (error) {
       console.error('Error deleting message:', error)
@@ -1369,7 +1397,11 @@ export default function ChatPage({ params }: ChatPageProps) {
                             : ''
                         }`}
                       >
-                        {contactContent ? (
+                        {message.isDeleted ? (
+                          <p className="text-sm italic text-gray-200/90 dark:text-gray-300/90">
+                            Message deleted
+                          </p>
+                        ) : contactContent ? (
                           contactContent
                         ) : message.type === 'FILE' || message.content.startsWith('📎') ? (
                           // Check for video, audio, images, then other files
@@ -1438,6 +1470,8 @@ export default function ChatPage({ params }: ChatPageProps) {
                           chatId={chatId}
                           content={message.content}
                           isOwn={isOwn}
+                          canDeleteForEveryone={isGroupAdmin}
+                          isDeleted={message.isDeleted}
                           isEdited={message.isEdited}
                           createdAt={message.createdAt}
                           isInteractionDisabled={contactState.isBlocked}
@@ -1595,6 +1629,7 @@ export default function ChatPage({ params }: ChatPageProps) {
           isOpen={!!editingMessage}
           messageId={editingMessage?.id || ''}
           initialContent={editingMessage?.content || ''}
+          createdAt={editingMessage?.createdAt || new Date().toISOString()}
           isLoading={isEditLoading}
           onClose={() => setEditingMessage(null)}
           onSave={handleSaveEdit}

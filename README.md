@@ -11,6 +11,7 @@ A modern, open-source Progressive Web Application (PWA) inspired by WeChat, desi
 - **Progressive Web App**: Native app-like experience in the browser
 - **End-to-End Encryption**: Privacy-focused secure messaging
 - **Self-Hostable**: Deploy your own instance
+- **Password Reset**: Secure email-based account recovery
 
 ## 🏗️ Architecture
 
@@ -48,6 +49,11 @@ cp apps/api/.env.example apps/api/.env
 # Start development servers
 pnpm dev
 ```
+
+### Password Reset Email
+
+Configure SMTP settings in `apps/api/.env` to enable password reset emails. If SMTP is not configured,
+the API will log reset links to the server console in development.
 
 ### Development
 

@@ -23,39 +23,91 @@
       "Error": {
         "type": "object",
         "properties": {
-          "error": { "type": "string" }
+          "error": {
+            "type": "string"
+          }
         }
       },
       "User": {
         "type": "object",
         "properties": {
-          "id": { "type": "string" },
-          "email": { "type": "string", "format": "email" },
-          "username": { "type": "string" },
-          "displayName": { "type": "string" },
-          "avatar": { "type": "string", "nullable": true },
-          "status": { "type": "string", "enum": ["ONLINE", "OFFLINE", "AWAY", "BUSY"] }
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "avatar": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ONLINE",
+              "OFFLINE",
+              "AWAY",
+              "BUSY"
+            ]
+          }
         }
       },
       "Message": {
         "type": "object",
         "properties": {
-          "id": { "type": "string" },
-          "content": { "type": "string" },
-          "type": { "type": "string", "example": "TEXT" },
-          "chatId": { "type": "string" },
-          "senderId": { "type": "string" },
-          "isEdited": { "type": "boolean" },
-          "isDeleted": { "type": "boolean" },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" },
+          "id": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "example": "TEXT"
+          },
+          "chatId": {
+            "type": "string"
+          },
+          "senderId": {
+            "type": "string"
+          },
+          "isEdited": {
+            "type": "boolean"
+          },
+          "isDeleted": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
           "sender": {
             "type": "object",
             "properties": {
-              "id": { "type": "string" },
-              "username": { "type": "string" },
-              "displayName": { "type": "string" },
-              "avatar": { "type": "string", "nullable": true }
+              "id": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              },
+              "displayName": {
+                "type": "string"
+              },
+              "avatar": {
+                "type": "string",
+                "nullable": true
+              }
             }
           }
         }
@@ -63,17 +115,30 @@
       "ReactionSummary": {
         "type": "object",
         "properties": {
-          "emoji": { "type": "string" },
-          "count": { "type": "integer" },
+          "emoji": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          },
           "users": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "id": { "type": "string" },
-                "username": { "type": "string" },
-                "displayName": { "type": "string" },
-                "avatar": { "type": "string", "nullable": true }
+                "id": {
+                  "type": "string"
+                },
+                "username": {
+                  "type": "string"
+                },
+                "displayName": {
+                  "type": "string"
+                },
+                "avatar": {
+                  "type": "string",
+                  "nullable": true
+                }
               }
             }
           }
@@ -91,10 +156,20 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["email", "password"],
+                "required": [
+                  "email",
+                  "password"
+                ],
                 "properties": {
-                  "email": { "type": "string", "format": "email", "example": "alice@openchat.dev" },
-                  "password": { "type": "string", "example": "Demo123456" }
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "alice@openchat.dev"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "Demo123456"
+                  }
                 }
               }
             }
@@ -108,12 +183,19 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean", "example": true },
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
                     "data": {
                       "type": "object",
                       "properties": {
-                        "user": { "$ref": "#/components/schemas/User" },
-                        "token": { "type": "string" }
+                        "user": {
+                          "$ref": "#/components/schemas/User"
+                        },
+                        "token": {
+                          "type": "string"
+                        }
                       }
                     }
                   }
@@ -125,7 +207,9 @@
             "description": "Validation error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
@@ -133,7 +217,9 @@
             "description": "Invalid email or password",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -149,12 +235,30 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["email", "username", "displayName", "password"],
+                "required": [
+                  "email",
+                  "username",
+                  "displayName",
+                  "password"
+                ],
                 "properties": {
-                  "email": { "type": "string", "format": "email", "example": "new@openchat.dev" },
-                  "username": { "type": "string", "example": "new_user" },
-                  "displayName": { "type": "string", "example": "New User" },
-                  "password": { "type": "string", "example": "Demo123456" }
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "new@openchat.dev"
+                  },
+                  "username": {
+                    "type": "string",
+                    "example": "new_user"
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "example": "New User"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "Demo123456"
+                  }
                 }
               }
             }
@@ -168,12 +272,19 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean", "example": true },
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
                     "data": {
                       "type": "object",
                       "properties": {
-                        "user": { "$ref": "#/components/schemas/User" },
-                        "token": { "type": "string" }
+                        "user": {
+                          "$ref": "#/components/schemas/User"
+                        },
+                        "token": {
+                          "type": "string"
+                        }
                       }
                     }
                   }
@@ -185,7 +296,9 @@
             "description": "Validation error or user exists",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -195,7 +308,11 @@
     "/api/auth/me": {
       "get": {
         "summary": "Get current user profile",
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Profile data",
@@ -204,8 +321,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean", "example": true },
-                    "data": { "$ref": "#/components/schemas/User" }
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/User"
+                    }
                   }
                 }
               }
@@ -215,7 +337,9 @@
             "description": "Unauthorized",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
@@ -223,7 +347,9 @@
             "description": "User not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -233,7 +359,11 @@
     "/api/chats": {
       "get": {
         "summary": "List chats",
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Chats list",
@@ -242,18 +372,34 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
+                    "success": {
+                      "type": "boolean"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
-                          "id": { "type": "string" },
-                          "type": { "type": "string" },
-                          "name": { "type": "string", "nullable": true },
-                          "description": { "type": "string", "nullable": true },
-                          "unreadCount": { "type": "integer" },
-                          "lastMessage": { "$ref": "#/components/schemas/Message" }
+                          "id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "description": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "unreadCount": {
+                            "type": "integer"
+                          },
+                          "lastMessage": {
+                            "$ref": "#/components/schemas/Message"
+                          }
                         }
                       }
                     }
@@ -266,7 +412,9 @@
             "description": "Unauthorized",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -276,13 +424,19 @@
     "/api/chats/{chatId}/messages": {
       "post": {
         "summary": "Send message",
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "chatId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -291,12 +445,26 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["content"],
+                "required": [
+                  "content"
+                ],
                 "properties": {
-                  "content": { "type": "string", "example": "Hello from OpenChat" },
-                  "type": { "type": "string", "example": "TEXT" },
-                  "replyToId": { "type": "string", "nullable": true },
-                  "metadata": { "type": "object", "nullable": true }
+                  "content": {
+                    "type": "string",
+                    "example": "Hello from OpenChat"
+                  },
+                  "type": {
+                    "type": "string",
+                    "example": "TEXT"
+                  },
+                  "replyToId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "nullable": true
+                  }
                 }
               }
             }
@@ -310,8 +478,12 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
-                    "data": { "$ref": "#/components/schemas/Message" }
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Message"
+                    }
                   }
                 }
               }
@@ -321,7 +493,9 @@
             "description": "Validation error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
@@ -329,7 +503,9 @@
             "description": "Not a member of this chat",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -339,19 +515,27 @@
     "/api/chats/{chatId}/messages/{messageId}": {
       "put": {
         "summary": "Edit message",
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "chatId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "messageId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -360,9 +544,14 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["content"],
+                "required": [
+                  "content"
+                ],
                 "properties": {
-                  "content": { "type": "string", "example": "Updated message" }
+                  "content": {
+                    "type": "string",
+                    "example": "Updated message"
+                  }
                 }
               }
             }
@@ -376,8 +565,12 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
-                    "data": { "$ref": "#/components/schemas/Message" }
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Message"
+                    }
                   }
                 }
               }
@@ -387,7 +580,9 @@
             "description": "Validation error or edit window expired",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
@@ -395,7 +590,9 @@
             "description": "Message not found or not owned",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -403,19 +600,27 @@
       },
       "delete": {
         "summary": "Delete message",
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "chatId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "messageId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -426,8 +631,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
-                    "message": { "type": "string", "example": "Message deleted successfully" }
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Message deleted successfully"
+                    }
                   }
                 }
               }
@@ -437,7 +647,9 @@
             "description": "Not authorized to delete",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
@@ -445,7 +657,9 @@
             "description": "Message not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -455,17 +669,29 @@
     "/api/reactions/add": {
       "post": {
         "summary": "Add or toggle reaction",
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["messageId", "emoji"],
+                "required": [
+                  "messageId",
+                  "emoji"
+                ],
                 "properties": {
-                  "messageId": { "type": "string" },
-                  "emoji": { "type": "string", "example": ":+1:" }
+                  "messageId": {
+                    "type": "string"
+                  },
+                  "emoji": {
+                    "type": "string",
+                    "example": ":+1:"
+                  }
                 }
               }
             }
@@ -479,9 +705,16 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
-                    "action": { "type": "string", "example": "added" },
-                    "reaction": { "type": "object" }
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "action": {
+                      "type": "string",
+                      "example": "added"
+                    },
+                    "reaction": {
+                      "type": "object"
+                    }
                   }
                 }
               }
@@ -494,9 +727,16 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
-                    "action": { "type": "string", "example": "removed" },
-                    "reaction": { "type": "object" }
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "action": {
+                      "type": "string",
+                      "example": "removed"
+                    },
+                    "reaction": {
+                      "type": "object"
+                    }
                   }
                 }
               }
@@ -506,7 +746,9 @@
             "description": "Message not found or access denied",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -516,13 +758,19 @@
     "/api/reactions/{messageId}": {
       "get": {
         "summary": "Get reactions for a message",
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "messageId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -533,16 +781,24 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
+                    "success": {
+                      "type": "boolean"
+                    },
                     "data": {
                       "type": "object",
                       "properties": {
-                        "messageId": { "type": "string" },
+                        "messageId": {
+                          "type": "string"
+                        },
                         "reactions": {
                           "type": "array",
-                          "items": { "$ref": "#/components/schemas/ReactionSummary" }
+                          "items": {
+                            "$ref": "#/components/schemas/ReactionSummary"
+                          }
                         },
-                        "totalReactions": { "type": "integer" }
+                        "totalReactions": {
+                          "type": "integer"
+                        }
                       }
                     }
                   }
@@ -554,7 +810,9 @@
             "description": "Message not found or access denied",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -564,17 +822,29 @@
     "/api/reactions/remove": {
       "delete": {
         "summary": "Remove reaction",
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["messageId", "emoji"],
+                "required": [
+                  "messageId",
+                  "emoji"
+                ],
                 "properties": {
-                  "messageId": { "type": "string" },
-                  "emoji": { "type": "string", "example": ":+1:" }
+                  "messageId": {
+                    "type": "string"
+                  },
+                  "emoji": {
+                    "type": "string",
+                    "example": ":+1:"
+                  }
                 }
               }
             }
@@ -588,8 +858,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
-                    "message": { "type": "string", "example": "Reaction removed successfully" }
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Reaction removed successfully"
+                    }
                   }
                 }
               }
@@ -599,7 +874,9 @@
             "description": "Reaction not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -609,18 +886,26 @@
     "/api/message-status/mark-read": {
       "post": {
         "summary": "Mark messages as read",
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["messageIds"],
+                "required": [
+                  "messageIds"
+                ],
                 "properties": {
                   "messageIds": {
                     "type": "array",
-                    "items": { "type": "string" },
+                    "items": {
+                      "type": "string"
+                    },
                     "maxItems": 50
                   }
                 }
@@ -636,16 +921,27 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
-                    "message": { "type": "string" },
-                    "markedCount": { "type": "integer" },
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "markedCount": {
+                      "type": "integer"
+                    },
                     "readStatuses": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
-                          "messageId": { "type": "string" },
-                          "readAt": { "type": "string", "format": "date-time" }
+                          "messageId": {
+                            "type": "string"
+                          },
+                          "readAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
                         }
                       }
                     }
@@ -658,7 +954,9 @@
             "description": "Validation failed or access denied",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -668,13 +966,19 @@
     "/api/message-status/{messageId}/read-by": {
       "get": {
         "summary": "Get read status for message",
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "messageId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -685,11 +989,15 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
+                    "success": {
+                      "type": "boolean"
+                    },
                     "data": {
                       "type": "object",
                       "properties": {
-                        "messageId": { "type": "string" },
+                        "messageId": {
+                          "type": "string"
+                        },
                         "readBy": {
                           "type": "array",
                           "items": {
@@ -698,19 +1006,37 @@
                               "user": {
                                 "type": "object",
                                 "properties": {
-                                  "id": { "type": "string" },
-                                  "username": { "type": "string" },
-                                  "displayName": { "type": "string" },
-                                  "avatar": { "type": "string", "nullable": true }
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "username": {
+                                    "type": "string"
+                                  },
+                                  "displayName": {
+                                    "type": "string"
+                                  },
+                                  "avatar": {
+                                    "type": "string",
+                                    "nullable": true
+                                  }
                                 }
                               },
-                              "readAt": { "type": "string", "format": "date-time" }
+                              "readAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
                             }
                           }
                         },
-                        "readCount": { "type": "integer" },
-                        "totalParticipants": { "type": "integer" },
-                        "allRead": { "type": "boolean" }
+                        "readCount": {
+                          "type": "integer"
+                        },
+                        "totalParticipants": {
+                          "type": "integer"
+                        },
+                        "allRead": {
+                          "type": "boolean"
+                        }
                       }
                     }
                   }
@@ -722,7 +1048,145 @@
             "description": "Message not found or access denied",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/password-reset/request": {
+      "post": {
+        "summary": "Request password reset",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "alice@openchat.dev"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset email requested",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/password-reset/confirm": {
+      "post": {
+        "summary": "Confirm password reset",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token",
+                  "password"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "example": "reset-token"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "NewPass123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired reset token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }

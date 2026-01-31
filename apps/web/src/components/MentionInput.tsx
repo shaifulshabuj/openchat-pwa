@@ -47,7 +47,8 @@ export function MentionInput({
       try {
         const response = await chatAPI.getGroupMembers(chatId)
         if (response.success) {
-          setMembers(response.data)
+          const normalizedMembers = response.data.map((member: any) => member.user ?? member)
+          setMembers(normalizedMembers)
         }
       } catch (error) {
         console.error('Failed to load group members:', error)

@@ -781,3 +781,12 @@ The latest changes represent **MAJOR IMPROVEMENTS** and **ALL CRITICAL ISSUES RE
 - Forward note delivered.
 - Forwarded message delivered and displays “Forwarded” tag + original content.
 - Success toast shown (“Message forwarded”).
+
+## ✅ Latest Progress Update (January 31, 2026 14:50 PST)
+- ✅ Added client-side HEIC/HEIF conversion via `heic2any` with JPEG fallback.
+- ✅ Normalized empty/unknown MIME types before upload to avoid mobile picker failures.
+- ✅ Updated FileUpload to process HEIC for both drag/drop and file picker flows.
+- ⚠️ Local type-check could not run because pnpm requires Node >=18 (current Node 14.13.1).
+
+### Test Commands & Results (January 31, 2026 14:50 PST)
+- `pnpm --filter openchat-web type-check` → **FAILED** (Node version too old for pnpm)

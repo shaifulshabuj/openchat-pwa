@@ -83,6 +83,15 @@ export interface RegisterData {
   password: string
 }
 
+export interface PasswordResetRequestData {
+  email: string
+}
+
+export interface PasswordResetConfirmData {
+  token: string
+  password: string
+}
+
 export interface Chat {
   id: string
   type: 'PRIVATE' | 'GROUP' | 'CHANNEL'
@@ -127,6 +136,8 @@ export interface Message {
   replyTo?: Message
 }
 
+export type MessageDeleteScope = 'me' | 'everyone'
+
 export interface ChatInvitation {
   id: string
   code: string
@@ -161,6 +172,16 @@ export const authAPI = {
 
   async logout(): Promise<{ success: boolean }> {
     const response = await api.post('/api/auth/logout')
+    return response.data
+  },
+
+  async requestPasswordReset(data: PasswordResetRequestData): Promise<{ success: boolean; message?: string }> {
+    const response = await api.post('/api/auth/password-reset/request', data)
+    return response.data
+  },
+
+  async confirmPasswordReset(data: PasswordResetConfirmData): Promise<{ success: boolean; message?: string }> {
+    const response = await api.post('/api/auth/password-reset/confirm', data)
     return response.data
   },
 }
@@ -231,8 +252,14 @@ export const chatAPI = {
     return response.data
   },
 
-  async deleteMessage(chatId: string, messageId: string): Promise<{ success: boolean }> {
-    const response = await api.delete(`/api/chats/${chatId}/messages/${messageId}`)
+  async deleteMessage(
+    chatId: string,
+    messageId: string,
+    scope: MessageDeleteScope = 'everyone'
+  ): Promise<{ success: boolean; scope?: MessageDeleteScope }> {
+    const response = await api.delete(`/api/chats/${chatId}/messages/${messageId}`, {
+      data: { scope }
+    })
     return response.data
   },
 

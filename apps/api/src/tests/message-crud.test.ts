@@ -1,5 +1,6 @@
 import { test, expect, describe, beforeAll, afterAll } from 'vitest'
 import { build } from '../index'
+import { prisma } from '../utils/database'
 import { FastifyInstance } from 'fastify'
 
 describe('Message CRUD Operations', () => {
@@ -117,6 +118,45 @@ describe('Message CRUD Operations', () => {
       expect(result.data.content).toBe('Updated test message')
       expect(result.data.isEdited).toBe(true)
       expect(result.data.updatedAt).toBeDefined()
+    })
+
+    test('should reject editing message older than 5 minutes', async () => {
+      const createResponse = await app.inject({
+        method: 'POST',
+        url: `/api/chats/${chatId}/messages`,
+        headers: {
+          authorization: `Bearer ${authToken}`
+        },
+        payload: {
+          content: 'Old message for edit limit test'
+        }
+      })
+
+      expect(createResponse.statusCode).toBe(201)
+
+      const createResult = JSON.parse(createResponse.body)
+      const oldMessageId = createResult.data.id
+
+      await prisma.message.update({
+        where: { id: oldMessageId },
+        data: { createdAt: new Date(Date.now() - 6 * 60 * 1000) }
+      })
+
+      const response = await app.inject({
+        method: 'PUT',
+        url: `/api/chats/${chatId}/messages/${oldMessageId}`,
+        headers: {
+          authorization: `Bearer ${authToken}`
+        },
+        payload: {
+          content: 'Attempted edit after window'
+        }
+      })
+
+      expect(response.statusCode).toBe(400)
+
+      const result = JSON.parse(response.body)
+      expect(result.error).toBe('Message is too old to edit (5 minute limit)')
     })
 
     test('should reject editing non-existent message', async () => {

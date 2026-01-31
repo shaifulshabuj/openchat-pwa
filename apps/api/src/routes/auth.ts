@@ -1,9 +1,21 @@
 import { FastifyInstance } from 'fastify'
 import { prisma } from '../utils/database.js'
 import { hashPassword, verifyPassword, generateToken } from '../utils/auth.js'
-import { registerSchema, loginSchema, updateProfileSchema } from '../utils/validation.js'
+import {
+  registerSchema,
+  loginSchema,
+  updateProfileSchema,
+  passwordResetRequestSchema,
+  passwordResetConfirmSchema
+} from '../utils/validation.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { rateLimits } from '../middleware/security.js'
+import {
+  generatePasswordResetToken,
+  hashPasswordResetToken,
+  getPasswordResetTokenExpiry
+} from '../utils/passwordReset.js'
+import { sendPasswordResetEmail } from '../utils/email.js'
 
 export default async function authRoutes(fastify: FastifyInstance) {
   // Register a new user - with rate limiting for security
@@ -138,6 +150,138 @@ export default async function authRoutes(fastify: FastifyInstance) {
         })
       }
       
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Request password reset - with rate limiting for security
+  fastify.post('/password-reset/request', {
+    preHandler: [rateLimits.passwordResetRequest]
+  }, async (request, reply) => {
+    try {
+      const { email } = passwordResetRequestSchema.parse(request.body)
+
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          email: true,
+          displayName: true
+        }
+      })
+
+      if (!user) {
+        return reply.send({
+          success: true,
+          message: 'If an account exists for that email, a reset link has been sent.'
+        })
+      }
+
+      // Remove any existing reset tokens for this user
+      await prisma.passwordResetToken.deleteMany({
+        where: { userId: user.id }
+      })
+
+      const rawToken = generatePasswordResetToken()
+      const tokenHash = hashPasswordResetToken(rawToken)
+      const expiresAt = getPasswordResetTokenExpiry()
+
+      const userAgentHeader = request.headers['user-agent']
+      const userAgent = Array.isArray(userAgentHeader)
+        ? userAgentHeader.join(', ')
+        : userAgentHeader || null
+
+      await prisma.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          tokenHash,
+          expiresAt,
+          requestIp: request.ip,
+          userAgent
+        }
+      })
+
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
+      const resetUrl = `${frontendUrl}/auth/reset-password?token=${rawToken}`
+
+      try {
+        await sendPasswordResetEmail({
+          to: user.email,
+          displayName: user.displayName,
+          resetUrl
+        })
+      } catch (emailError) {
+        fastify.log.error(emailError)
+      }
+
+      return reply.send({
+        success: true,
+        message: 'If an account exists for that email, a reset link has been sent.'
+      })
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return reply.status(400).send({
+          error: 'Validation failed',
+          details: error.errors
+        })
+      }
+
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Confirm password reset - with rate limiting for security
+  fastify.post('/password-reset/confirm', {
+    preHandler: [rateLimits.passwordResetConfirm]
+  }, async (request, reply) => {
+    try {
+      const { token, password } = passwordResetConfirmSchema.parse(request.body)
+      const tokenHash = hashPasswordResetToken(token)
+
+      const resetToken = await prisma.passwordResetToken.findUnique({
+        where: { tokenHash }
+      })
+
+      if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {
+        return reply.status(400).send({ error: 'Invalid or expired reset token' })
+      }
+
+      const hashedPassword = await hashPassword(password)
+      const usedAt = new Date()
+
+      await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: resetToken.userId },
+          data: { password: hashedPassword }
+        })
+
+        await tx.passwordResetToken.update({
+          where: { id: resetToken.id },
+          data: { usedAt }
+        })
+
+        await tx.passwordResetToken.deleteMany({
+          where: {
+            userId: resetToken.userId,
+            id: { not: resetToken.id }
+          }
+        })
+      })
+
+      return reply.send({
+        success: true,
+        message: 'Password has been reset successfully'
+      })
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return reply.status(400).send({
+          error: 'Validation failed',
+          details: error.errors
+        })
+      }
+
       fastify.log.error(error)
       return reply.status(500).send({ error: 'Internal server error' })
     }

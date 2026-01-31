@@ -111,6 +111,13 @@ export default async function chatRoutes(fastify: FastifyInstance) {
           messages: {
             take: 1,
             orderBy: { createdAt: 'desc' },
+            where: {
+              deletions: {
+                none: {
+                  userId: request.auth.userId
+                }
+              }
+            },
             include: {
               sender: {
                 select: {
@@ -137,6 +144,12 @@ export default async function chatRoutes(fastify: FastifyInstance) {
             where: {
               chatId: chat.id,
               senderId: { not: request.auth.userId },
+              isDeleted: false,
+              deletions: {
+                none: {
+                  userId: request.auth.userId
+                }
+              },
               createdAt: {
                 gt: participant?.joinedAt || new Date(0)
               }
@@ -355,6 +368,13 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: 'Mentions are only available for group chats' })
       }
 
+      const admins = await prisma.chatAdmin.findMany({
+        where: { chatId },
+        select: { userId: true }
+      })
+
+      const adminIds = new Set(admins.map((admin) => admin.userId))
+
       const members = await prisma.chatParticipant.findMany({
         where: {
           chatId,
@@ -378,7 +398,12 @@ export default async function chatRoutes(fastify: FastifyInstance) {
 
       return reply.send({
         success: true,
-        data: members.map((member) => member.user)
+        data: members.map((member) => ({
+          id: member.id,
+          user: member.user,
+          joinedAt: member.joinedAt,
+          isAdmin: adminIds.has(member.userId)
+        }))
       })
     } catch (error) {
       fastify.log.error(error)
@@ -410,7 +435,11 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       const messages = await prisma.message.findMany({
         where: {
           chatId,
-          isDeleted: false,
+          deletions: {
+            none: {
+              userId: request.auth.userId
+            }
+          },
           createdAt: {
             gte: participation.joinedAt
           }
@@ -533,6 +562,11 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         where: {
           chatId,
           isDeleted: false,
+          deletions: {
+            none: {
+              userId: request.auth.userId
+            }
+          },
           type: 'TEXT', // Only search text messages
           content: {
             contains: query,
@@ -919,6 +953,71 @@ export default async function chatRoutes(fastify: FastifyInstance) {
     try {
       const { chatId, messageId } = request.params
       const userId = request.auth.userId
+      const { scope } = z.object({
+        scope: z.enum(['me', 'everyone']).optional()
+      }).parse({
+        scope: request.body?.scope ?? request.query?.scope
+      })
+      const deleteScope = scope ?? 'everyone'
+
+      const participation = await prisma.chatParticipant.findUnique({
+        where: {
+          userId_chatId: {
+            userId,
+            chatId
+          }
+        }
+      })
+
+      if (!participation || participation.leftAt) {
+        return reply.status(403).send({ error: 'Not a member of this chat' })
+      }
+
+      if (deleteScope === 'me') {
+        const message = await prisma.message.findFirst({
+          where: {
+            id: messageId,
+            chatId
+          }
+        })
+
+        if (!message) {
+          return reply.status(404).send({
+            error: 'Message not found'
+          })
+        }
+
+        await prisma.messageDeletion.upsert({
+          where: {
+            messageId_userId: {
+              messageId,
+              userId
+            }
+          },
+          update: {
+            deletedAt: new Date()
+          },
+          create: {
+            messageId,
+            userId
+          }
+        })
+
+        const io = (fastify as any).io
+        if (io) {
+          io.to(`user:${userId}`).emit('message-deleted-for-me', {
+            messageId,
+            chatId,
+            deletedBy: userId
+          })
+        }
+
+        return reply.send({
+          success: true,
+          message: 'Message deleted for you',
+          scope: deleteScope
+        })
+      }
 
       // Find the message and verify ownership or admin rights
       const message = await prisma.message.findFirst({
@@ -956,7 +1055,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       }
 
       // Soft delete the message
-      const deletedMessage = await prisma.message.update({
+      await prisma.message.update({
         where: { id: messageId },
         data: {
           isDeleted: true,
@@ -977,9 +1076,16 @@ export default async function chatRoutes(fastify: FastifyInstance) {
 
       return reply.send({
         success: true,
-        message: 'Message deleted successfully'
+        message: 'Message deleted successfully',
+        scope: deleteScope
       })
     } catch (error) {
+      if ((error as any).name === 'ZodError') {
+        return reply.status(400).send({
+          error: 'Validation failed',
+          details: (error as any).errors
+        })
+      }
       fastify.log.error(error)
       return reply.status(500).send({ error: 'Internal server error' })
     }

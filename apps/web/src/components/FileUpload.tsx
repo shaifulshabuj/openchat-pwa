@@ -1,7 +1,7 @@
 'use client'
 
 import { useId, useState, useRef } from 'react'
-import { Upload, X, FileText, Image as ImageIcon, Music, Video, Download } from 'lucide-react'
+import { Upload, X, FileText, Image as ImageIcon, Music, Video } from 'lucide-react'
 import { Button } from './ui/button'
 
 interface FileUploadProps {
@@ -41,6 +41,11 @@ export function FileUpload({
   const [dragOver, setDragOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [compressing, setCompressing] = useState(false)
+  const [compressionProgress, setCompressionProgress] = useState(0)
+  const [compressionStatus, setCompressionStatus] = useState('Preparing image...')
+  const [imageQuality, setImageQuality] = useState(0.82)
+  const [maxImageDimension, setMaxImageDimension] = useState(1920)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputId = useId()
 
@@ -97,23 +102,147 @@ export function FileUpload({
     input.click()
   }
 
-  const handleFileSelect = (file: File) => {
-    setError(null)
-    
-    // Validate file size
-    const maxBytes = maxSize * 1024 * 1024
-    if (file.size > maxBytes) {
-      setError(`File too large. Maximum size is ${maxSize}MB.`)
-      return
+  const isHeicFile = (file: File) => {
+    const name = file.name.toLowerCase()
+    return (
+      file.type === 'image/heic' ||
+      file.type === 'image/heif' ||
+      name.endsWith('.heic') ||
+      name.endsWith('.heif')
+    )
+  }
+
+  const normalizeFileType = (file: File) => {
+    if (file.type && file.type !== 'application/octet-stream') return file
+    const inferred = inferMimeType(file.name)
+    if (!inferred) return file
+    return new File([file], file.name, { type: inferred, lastModified: file.lastModified })
+  }
+
+  const getFileType = (file: File) => file.type || inferMimeType(file.name)
+
+  const isCompressibleImage = (file: File) => {
+    const type = getFileType(file)
+    return Boolean(type && type.startsWith('image/') && type !== 'image/gif')
+  }
+
+  const loadImageFromFile = (file: File) => {
+    return new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image()
+      const objectUrl = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl)
+        resolve(img)
+      }
+      img.onerror = (event) => {
+        URL.revokeObjectURL(objectUrl)
+        reject(event)
+      }
+      img.src = objectUrl
+    })
+  }
+
+  const getImageBitmap = async (file: File): Promise<ImageBitmap | HTMLImageElement> => {
+    if (typeof createImageBitmap === 'function') {
+      return await createImageBitmap(file)
+    }
+    return await loadImageFromFile(file)
+  }
+
+  const compressImageFile = async (file: File) => {
+    if (!isCompressibleImage(file)) return file
+
+    const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg'
+    const baseName = file.name.replace(/\.[^.]+$/, '') || 'image'
+
+    setCompressionStatus('Decoding image...')
+    setCompressionProgress(15)
+
+    const imageSource = await getImageBitmap(file)
+    const sourceWidth = 'naturalWidth' in imageSource ? imageSource.naturalWidth : imageSource.width
+    const sourceHeight = 'naturalHeight' in imageSource ? imageSource.naturalHeight : imageSource.height
+
+    setCompressionStatus('Resizing image...')
+    setCompressionProgress(45)
+
+    const maxDimension = Math.max(1, maxImageDimension)
+    const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight))
+    const targetWidth = Math.max(1, Math.round(sourceWidth * scale))
+    const targetHeight = Math.max(1, Math.round(sourceHeight * scale))
+
+    const canvas = document.createElement('canvas')
+    canvas.width = targetWidth
+    canvas.height = targetHeight
+
+    const ctx = canvas.getContext('2d', { alpha: outputType === 'image/png' })
+    if (!ctx) throw new Error('Canvas not supported')
+
+    ctx.drawImage(imageSource as CanvasImageSource, 0, 0, targetWidth, targetHeight)
+
+    if ('close' in imageSource && typeof imageSource.close === 'function') {
+      imageSource.close()
     }
 
-    // Validate file type
-    if (!isAllowedFileType(file)) {
-      setError('File type not supported')
-      return
+    setCompressionStatus('Encoding image...')
+    setCompressionProgress(75)
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      if (outputType === 'image/png') {
+        canvas.toBlob((result) => resolve(result), outputType)
+        return
+      }
+      canvas.toBlob((result) => resolve(result), outputType, imageQuality)
+    })
+
+    if (!blob) throw new Error('Image compression failed')
+
+    setCompressionProgress(95)
+
+    const compressedFile = new File([blob], `${baseName}.${outputType === 'image/png' ? 'png' : 'jpg'}`, {
+      type: outputType,
+      lastModified: file.lastModified
+    })
+
+    const sameDimensions = targetWidth === sourceWidth && targetHeight === sourceHeight
+    if (sameDimensions && compressedFile.size >= file.size) {
+      return file
     }
 
-    uploadFile(file)
+    return compressedFile
+  }
+
+  const convertHeicToJpeg = async (file: File) => {
+    const heic2anyModule = await import('heic2any')
+    const heic2any = heic2anyModule.default
+    const conversion = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 })
+    const outputBlob = Array.isArray(conversion) ? conversion[0] : conversion
+    const baseName = file.name.replace(/\.(heic|heif)$/i, '') || 'photo'
+    return new File([outputBlob], `${baseName}.jpg`, {
+      type: 'image/jpeg',
+      lastModified: file.lastModified
+    })
+  }
+
+  const prepareFileForUpload = async (file: File) => {
+    let workingFile = normalizeFileType(file)
+
+    if (isHeicFile(workingFile)) {
+      try {
+        setCompressionStatus('Converting HEIC...')
+        setCompressionProgress(10)
+        workingFile = await convertHeicToJpeg(workingFile)
+      } catch (error) {
+        console.error('HEIC conversion failed:', error)
+        throw new Error('HEIC/HEIF conversion failed')
+      }
+    }
+
+    if (isCompressibleImage(workingFile)) {
+      workingFile = await compressImageFile(workingFile)
+    }
+
+    setCompressionProgress(100)
+    return workingFile
   }
 
   const uploadFile = async (file: File) => {
@@ -183,34 +312,63 @@ export function FileUpload({
     setDragOver(false)
   }
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(false)
     
     const files = Array.from(e.dataTransfer.files)
     if (files.length > 0) {
-      handleFileSelect(files[0])
+      await handleIncomingFile(files[0])
     }
   }
 
   const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files.length > 0) {
-      const file = files[0]
-      
-      // Handle HEIC/HEIF files by attempting to convert them
-      if (file.type === 'image/heic' || file.type === 'image/heif' || 
-          file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
-        try {
-          // For now, try to process as-is and let the server handle it
-          // In the future, we could add client-side conversion
-          handleFileSelect(file)
-        } catch (error) {
-          setError('HEIC/HEIF format not supported on this device. Please use JPEG or PNG.')
-          return
-        }
+      await handleIncomingFile(files[0])
+    }
+  }
+
+  const handleIncomingFile = async (file: File) => {
+    setError(null)
+
+    const normalizedFile = normalizeFileType(file)
+
+    if (!isAllowedFileType(normalizedFile)) {
+      setError('File type not supported')
+      return
+    }
+
+    const shouldProcess = isCompressibleImage(normalizedFile) || isHeicFile(normalizedFile)
+    if (shouldProcess) {
+      setCompressing(true)
+      setCompressionProgress(0)
+      setCompressionStatus('Preparing image...')
+    }
+
+    try {
+      const preparedFile = await prepareFileForUpload(normalizedFile)
+
+      const maxBytes = maxSize * 1024 * 1024
+      if (preparedFile.size > maxBytes) {
+        setError(`File too large. Maximum size is ${maxSize}MB.`)
+        return
+      }
+
+      uploadFile(preparedFile)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'File processing failed'
+      if (message === 'HEIC/HEIF conversion failed') {
+        setError('HEIC/HEIF format not supported on this device. Please use JPEG or PNG.')
       } else {
-        handleFileSelect(file)
+        setError(message)
+      }
+    } finally {
+      if (shouldProcess) {
+        setTimeout(() => {
+          setCompressing(false)
+          setCompressionProgress(0)
+        }, 200)
       }
     }
   }
@@ -252,18 +410,20 @@ export function FileUpload({
             </div>
           )}
 
-          {uploading ? (
+          {(compressing || uploading) ? (
             <div className="text-center py-8">
               <div className="mb-4">
                 <Upload className="w-12 h-12 text-green-500 mx-auto animate-pulse" />
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                Uploading... {Math.round(uploadProgress)}%
+                {compressing
+                  ? `${compressionStatus} ${Math.round(compressionProgress)}%`
+                  : `Uploading... ${Math.round(uploadProgress)}%`}
               </p>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div 
                   className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
+                  style={{ width: `${compressing ? compressionProgress : uploadProgress}%` }}
                 />
               </div>
             </div>
@@ -319,6 +479,43 @@ export function FileUpload({
                 <p>Documents: PDF, TXT</p>
                 <p>Audio: MP3, WAV</p>
                 <p>Video: MP4, WebM</p>
+              </div>
+
+              <div className="mt-4 rounded-md border border-gray-200 dark:border-gray-700 p-3">
+                <p className="text-xs font-medium text-gray-700 dark:text-gray-200 mb-2">
+                  Image compression settings
+                </p>
+                <div className="flex items-center justify-between gap-3 text-xs text-gray-600 dark:text-gray-300">
+                  <label htmlFor={`${inputId}-quality`} className="whitespace-nowrap">
+                    Quality ({Math.round(imageQuality * 100)}%)
+                  </label>
+                  <input
+                    id={`${inputId}-quality`}
+                    type="range"
+                    min={0.6}
+                    max={0.95}
+                    step={0.01}
+                    value={imageQuality}
+                    onChange={(event) => setImageQuality(Number(event.target.value))}
+                    className="w-full"
+                  />
+                </div>
+                <div className="mt-3 flex items-center justify-between gap-3 text-xs text-gray-600 dark:text-gray-300">
+                  <label htmlFor={`${inputId}-max-dim`} className="whitespace-nowrap">
+                    Max dimension
+                  </label>
+                  <select
+                    id={`${inputId}-max-dim`}
+                    value={String(maxImageDimension)}
+                    onChange={(event) => setMaxImageDimension(Number(event.target.value))}
+                    className="w-full rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1 text-xs"
+                  >
+                    <option value="1280">1280 px</option>
+                    <option value="1920">1920 px</option>
+                    <option value="2560">2560 px</option>
+                    <option value="4096">4096 px</option>
+                  </select>
+                </div>
               </div>
             </>
           )}

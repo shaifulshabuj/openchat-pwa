@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { ChatList } from '@/components/ChatList'
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle'
 import { ContactsPanel } from '@/components/Contacts/ContactsPanel'
+import { GroupCreationModal } from '@/components/GroupCreationModal'
 import { chatAPI } from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -65,37 +66,7 @@ export default function Home() {
   }
 
   const handleCreateGroup = () => {
-    const groupName = prompt('Enter group name:')
-    if (!groupName?.trim()) return
-
-    const createGroup = async () => {
-      try {
-        const response = await chatAPI.createChat({
-          type: 'GROUP',
-          name: groupName.trim(),
-          participants: [] // Start with empty group, add members later
-        })
-
-        if (response.success) {
-          toast({
-            title: 'Group created',
-            description: `"${groupName}" group has been created successfully.`,
-            variant: 'default'
-          })
-          
-          // Navigate to the new group chat
-          router.push(`/chat/${response.data.id}`)
-        }
-      } catch (error: any) {
-        toast({
-          title: 'Failed to create group',
-          description: error.response?.data?.error || error.message || 'Something went wrong',
-          variant: 'destructive'
-        })
-      }
-    }
-
-    createGroup()
+    setShowGroupModal(true)
   }
 
   const handleSendMessage = () => {
@@ -296,6 +267,11 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      <GroupCreationModal
+        isOpen={showGroupModal}
+        onClose={() => setShowGroupModal(false)}
+      />
     </div>
   )
 }

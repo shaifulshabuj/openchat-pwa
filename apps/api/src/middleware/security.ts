@@ -6,6 +6,8 @@ const RATE_LIMITS = {
   // Authentication endpoints - more restrictive
   login: { max: 20, windowMs: 15 * 60 * 1000 }, // 20 requests per 15 minutes (increased for dev)
   register: { max: 20, windowMs: 60 * 60 * 1000 }, // 20 requests per hour (increased for dev)
+  passwordResetRequest: { max: 5, windowMs: 60 * 60 * 1000 }, // 5 requests per hour
+  passwordResetConfirm: { max: 10, windowMs: 60 * 60 * 1000 }, // 10 requests per hour
 
   // API endpoints - moderate limits
   api: { max: 200, windowMs: 15 * 60 * 1000 }, // 200 requests per 15 minutes (increased for dev)
@@ -62,6 +64,14 @@ export function createRateLimiter(maxRequests: number, windowMs: number) {
 export const rateLimits = {
   auth: createRateLimiter(RATE_LIMITS.login.max, RATE_LIMITS.login.windowMs),
   register: createRateLimiter(RATE_LIMITS.register.max, RATE_LIMITS.register.windowMs),
+  passwordResetRequest: createRateLimiter(
+    RATE_LIMITS.passwordResetRequest.max,
+    RATE_LIMITS.passwordResetRequest.windowMs
+  ),
+  passwordResetConfirm: createRateLimiter(
+    RATE_LIMITS.passwordResetConfirm.max,
+    RATE_LIMITS.passwordResetConfirm.windowMs
+  ),
   api: createRateLimiter(RATE_LIMITS.api.max, RATE_LIMITS.api.windowMs),
   upload: createRateLimiter(RATE_LIMITS.upload.max, RATE_LIMITS.upload.windowMs),
   socket: createRateLimiter(RATE_LIMITS.socket.max, RATE_LIMITS.socket.windowMs),
