@@ -521,7 +521,8 @@ OpenChat uses **multiple concurrent agent sessions** for different workflows, tr
 2. **Local Test/Fix Agent** - Testing and bug fixing workflows
 3. **CI/CD Agent** - Deployment and continuous integration
 4. **Documentation Agent** - Documentation updates
-5. **Codex Sub-Agent** - Code execution delegated by Copilot
+5. **Codex Sub-Agent** - Code execution delegated by Copilot 
+Use [.github/skills/codex-cli.skill.md] for codex cli commands.
 
 ### **Session Resume Commands**
 
