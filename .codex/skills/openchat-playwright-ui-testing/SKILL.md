@@ -20,6 +20,7 @@ description: "UI-level testing for OpenChat using the Playwright MCP tool. Use w
 3) Record findings and fixes
 - Log test results in `work_reports/02_LOCAL_TEST_REPORT.md`.
 - If fixes are applied, add a dated entry in `work_reports/02_LOCAL_TEST_THEN_FIX_LOG.md`.
+- Always save a Playwright log file to `.codex/works/test_log/` using `YYMMDDHHMMSS_log_<testing item name>.md`.
 
 ## Test Checklist (minimum)
 
@@ -36,3 +37,4 @@ description: "UI-level testing for OpenChat using the Playwright MCP tool. Use w
 - `work_reports/02_LOCAL_TEST_REPORT.md`
 - `work_reports/02_LOCAL_TEST_THEN_FIX_LOG.md` (if fixes)
 - `work_reports/01_PROJECT_STATUS.md` (if new progress)
+- `.codex/works/test_log/YYMMDDHHMMSS_log_<testing item name>.md`
