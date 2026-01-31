@@ -1,9 +1,9 @@
 # 🧪 Local Test Report Critical Fix Logs
 
 **Project:** OpenChat PWA  
-**Date Range:** January 26, 2026  
+**Date Range:** January 26 - 31, 2026  
 **Environment:** Local Development → Production Ready  
-**Test Framework:** Vitest, Manual Testing  
+**Test Framework:** Vitest, Manual Testing, Docker Local Testing  
 
 ---
 
@@ -16,14 +16,68 @@ This document catalogs all critical issues discovered during local test report a
 - **Reactions API Tests:** SUCCESS (10/10 tests passing)
 - **Production Auth State:** FIXED (Hydration issue resolved)
 - **Static Export Build:** SUCCESS (GitHub Pages ready)
+- **Docker Test Environment:** OPERATIONAL (API: 8080, Web: 3000)
 - **Overall Test Coverage:** IMPROVED (41% → 65% pass rate)
 
-## ✅ Latest Progress Update (January 26, 2026)
-- ✅ Contact management flows verified via API (search → request → accept → contacts → message).
-- ✅ Contacts UI wired with search + QR input; start chat flow enabled.
-- ✅ Chat UX: replies, reaction picker/menu positioning, unread badge consistency.
-- ✅ API tests verified: `npx vitest run` (36 passed / 1 skipped).
-- ⏭️ Next priority: Production build optimization.
+## ✅ Latest Progress Update (January 31, 2026 17:01 JST) - Group Creation API Validation Fix
+
+### Group Creation 400 Bad Request Resolution
+
+**Issue:** Group creation failed with 400 Bad Request error and "Validation failed" toast when attempting to create groups with empty participants array.
+
+**Root Cause:** API validation schema had conflicting rules:
+1. Base validation: `participants: z.array(z.string()).min(1, 'At least one participant is required')`
+2. Refine validation: Allowed empty array for GROUP/CHANNEL types
+
+The base validation failed before the refine logic was reached, causing the 400 error.
+
+**Solution Applied:**
+- Removed the `.min(1)` constraint from base validation in `createChatSchema`
+- Handled participant count validation entirely in the refine logic
+- Allow empty participants array for GROUP/CHANNEL (creator is auto-added)
+- Require exactly 1 participant for PRIVATE chats
+
+**Files Modified:**
+- `apps/api/src/utils/validation.ts` (lines 50-68)
+
+**Verification:**
+- ✅ Docker containers rebuilt and restarted
+- ✅ API validation test: `curl -X POST /api/chats` with empty participants succeeds
+- ✅ Group creation returns 201 with chat object: `{"success":true,"data":{"id":"cml2k6u2m0000mzvoo6vxn19j"...}}`
+- ✅ Web interface can now create groups without 400 errors
+- ✅ Both services operational: API (8080), Web (3000)
+
+**Technical Impact:**
+- Resolves AxiosError status 400 in GroupCreationModal
+- Enables proper group creation workflow through web UI
+- Maintains validation integrity for different chat types
+
+## ✅ Latest Progress Update (January 31, 2026 16:52 JST) - React Duplicate Key Error Fix
+
+### GroupCreationModal Duplicate Key Issue Resolution
+
+**Issue:** React console errors showing duplicate keys `cmkv446au00016i5mvuzeuca4` causing hydration warnings and potential component state corruption.
+
+**Root Cause:** The `contacts` array contained duplicate entries with the same `user.id`, causing React to encounter non-unique keys when rendering the filtered contacts list.
+
+**Solution Applied:**
+- Modified `filteredContacts` useMemo to deduplicate contacts by `user.id` before filtering
+- Added `contacts.filter((contact, index, self) => index === self.findIndex(c => c.user.id === contact.user.id))` 
+- Ensures unique contact entries prevent React key collisions
+
+**Files Modified:**
+- `apps/web/src/components/GroupCreationModal.tsx` (lines 39-54)
+
+**Verification:**
+- ✅ Docker test environment: `docker compose -f docker-compose.local-test.yml up -d` 
+- ✅ Web service accessible: `http://localhost:3000/` 
+- ✅ API service healthy: `http://localhost:8080/health`
+- ✅ No console errors observed during group creation modal usage
+
+**Technical Impact:**
+- Eliminates React hydration warnings in browser console
+- Prevents component state corruption from duplicate keys
+- Improves GroupCreationModal rendering stability
 
 ## ✅ Latest Progress Update (January 31, 2026 16:45 JST) - Group Creation & Settings Fix
 

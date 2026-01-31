@@ -1,0 +1,209 @@
+# 🧾 **OpenChat PWA - Feature Checklist (Spec vs Implementation)**
+
+Source: `work_reports/00_SPECIFICATION_OPENCHAT_PWA.md`
+Status baseline: `work_reports/01_PROJECT_STATUS.md` (latest updates through Jan 30, 2026)
+
+Legend: ✅ Working | ⚠️ Partial | ❌ Not implemented | — Not reported
+
+---
+
+## **Phase 1: Core Messaging (MVP)**
+
+### **1.1 Authentication & User Management**
+
+| Feature | Spec | Implementation | Status | Gap | Checklist |
+| --- | --- | --- | --- | --- | --- |
+| Email/Password registration | ✅ | ✅ | ✅ Working |  | [x] |
+| Phone number registration with OTP | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| OAuth login (Google, GitHub, Apple) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| JWT-based authentication | ✅ | ✅ | ✅ Working |  | [x] |
+| Session management | ✅ | ✅ | ✅ Working (local storage) |  | [x] |
+| Password reset via email | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Two-Factor Authentication (2FA) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Profile management (avatar, username, bio, status) | ✅ | ✅ | ✅ Working |  | [x] |
+
+### **1.2 One-on-One Chat**
+
+| Feature | Spec | Implementation | Status | Gap | Checklist |
+| --- | --- | --- | --- | --- | --- |
+| Text messages | ✅ | ✅ | ✅ Working |  | [x] |
+| Emoji support (native + custom) | ✅ | ✅ | ✅ Working (native) | Custom emoji not reported | [x] |
+| Message status (sent, delivered, read) | ✅ | ✅ | ✅ Working |  | [x] |
+| Typing indicators | ✅ | ✅ | ✅ Working (Socket.io) |  | [x] |
+| Online/offline status | ✅ | ✅ | ✅ Working | Presence dot + grace period reduces flicker | [x] |
+| Last seen timestamp | ✅ | ✅ | ✅ Working |  | [x] |
+| Message editing (within 5 minutes) | ✅ | ✅ | ✅ Working | Live countdown timer implemented, 5-minute limit enforced | [x] |
+| Message deletion (for everyone/just me) | ✅ | ⚠️ | ⚠️ Partial | Soft delete only; scope not specified | [ ] |
+| Reply to specific messages | ✅ | ✅ | ✅ Working |  | [x] |
+| Forward messages | ✅ | ✅ | ✅ Working |  | [x] |
+| Copy message text | ✅ | ✅ | ✅ Working |  | [x] |
+| Message search | ✅ | ✅ | ✅ Working | | [x] |
+| Unread message counter | ✅ | ✅ | ✅ Working |  | [x] |
+| Conversation pinning | ✅ | ✅ | ✅ Working | | [x] |
+| Conversation archiving | ✅ | ✅ | ✅ Working | | [x] |
+| Block/unblock users | ✅ | ✅ | ✅ Working |  | [x] |
+
+### **1.3 Media Sharing**
+
+| Feature | Spec | Implementation | Status | Gap | Checklist |
+| --- | --- | --- | --- | --- | --- |
+| Image upload (JPEG, PNG, GIF, WebP, HEIC) | ✅ | ✅ | ✅ Working | Mobile HEIC/HEIF conversion now supported with heic2any | [x] |
+| Video upload (MP4, WebM, MOV) - max 100MB | ✅ | ✅ | ✅ Working | | [x] |
+| Audio messages (voice recording) | ✅ | ✅ | ✅ Working | | [x] |
+| File sharing (PDF, DOC, ZIP, etc.) - max 50MB | ✅ | ✅ | ✅ Working |  | [x] |
+| Image preview & gallery | ✅ | ✅ | ✅ Working |  | [x] |
+| Video player with controls | ✅ | ✅ | ✅ Working | | [x] |
+| Audio playback with waveform | ✅ | ✅ | ✅ Working | | [x] |
+| Automatic image compression | ✅ | ✅ | ✅ Working | Client-side compression pipeline with quality controls implemented | [x] |
+| Thumbnail generation | ✅ | ✅ | ✅ Working (Sharp) |  | [x] |
+| Progress indicators for uploads | ✅ | ✅ | ✅ Working |  | [x] |
+| Pause/resume uploads | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Image editing (crop, rotate, filters) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+
+### **1.4 Contacts Management**
+
+| Feature | Spec | Implementation | Status | Gap | Checklist |
+| --- | --- | --- | --- | --- | --- |
+| Add contacts by username/phone/email | ✅ | ⚠️ | ⚠️ Partial | Username/email search + QR supported; phone not implemented | [ ] |
+| QR code scanning to add contacts | ✅ | ✅ | ✅ Working |  | [x] |
+| Personal QR code generation | ✅ | ✅ | ✅ Working |  | [x] |
+| Contact requests (send/accept/decline) | ✅ | ✅ | ✅ Working |  | [x] |
+| Contact list with search | ✅ | ✅ | ✅ Working |  | [x] |
+| Contact favorites/starred | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Contact blocking | ✅ | ✅ | ✅ Working |  | [x] |
+| Import from device contacts (with permission) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Contact nicknames | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Contact labels/tags | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+
+---
+
+## **Phase 2: Group Features**
+
+### **2.1 Group Chat**
+
+| Feature | Spec | Implementation | Status | Gap | Checklist |
+| --- | --- | --- | --- | --- | --- |
+| Create group (2-500 members) | ✅ | ✅ | ✅ Working |  | [x] |
+| Group name & avatar | ✅ | ✅ | ✅ Working |  | [x] |
+| Group description | ✅ | ⚠️ | ⚠️ Partial | Editable in Group Settings; create flow lacks description input | [ ] |
+| Add/remove members | ✅ | ✅ | ✅ Working | Admin endpoints + Group Settings member management fixed | [x] |
+| Admin roles & permissions | ✅ | ✅ | ✅ Working | Promote/demote endpoints + fixed member data structure | [x] |
+| Group invitations via link | ✅ | ✅ | ✅ Working | Invite modal + /invite/[code] route + QR generation | [x] |
+| Group QR code | ✅ | ✅ | ✅ Working | QR displayed in invite modal with shareable links | [x] |
+| Member list with roles | ✅ | ✅ | ✅ Working | API now returns members with isAdmin flags and joinedAt | [x] |
+| @ mentions | ✅ | ✅ | ✅ Working | Mention autocomplete + highlights in group chats | [x] |
+| Reply in thread (optional) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Group announcements (pinned messages) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Mute group notifications | ✅ | — | — Not reported | Not reported in status updates | [ ] |
+| Leave group | ✅ | — | — Not reported | Not reported in status updates | [ ] |
+| Delete group (admin only) | ✅ | — | — Not reported | Not reported in status updates | [ ] |
+| Group settings | ✅ | ✅ | ✅ Working | Full settings modal with info/members/permissions tabs | [x] |
+| Member permissions (send media, add members, etc.) | ✅ | ⚠️ | ⚠️ Partial | UI exists but not persisted; no backend wiring | [ ] |
+
+---
+
+## **Phase 3: Social Features (Moments/Feed)**
+
+### **3.1 Moments (Social Feed)**
+
+| Feature | Spec | Implementation | Status | Gap | Checklist |
+| --- | --- | --- | --- | --- | --- |
+| Post text updates | ✅ | ⚠️ | ⚠️ Partial | Database schema and API foundation implemented, UI pending | [ ] |
+| Post images (1-9 photos) | ✅ | ⚠️ | ⚠️ Partial | Database schema supports media array, UI pending | [ ] |
+| Post videos | ✅ | ⚠️ | ⚠️ Partial | Database schema supports media array, UI pending | [ ] |
+| Location tagging | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Privacy settings (public, contacts only, custom list) | ✅ | ⚠️ | ⚠️ Partial | Database schema supports visibility levels, UI pending | [ ] |
+| Like posts | ✅ | ⚠️ | ⚠️ Partial | Database schema and basic API implemented, UI pending | [ ] |
+| Comment on posts | ✅ | ⚠️ | ⚠️ Partial | Database schema and basic API implemented, UI pending | [ ] |
+| Share posts | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Delete posts | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Edit posts (within time limit) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Timeline view | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Notification on likes/comments | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+
+---
+
+## **Phase 4: Advanced Communication**
+
+### **4.1 Voice & Video Calls**
+
+| Feature | Spec | Implementation | Status | Gap | Checklist |
+| --- | --- | --- | --- | --- | --- |
+| One-on-one voice calls | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| One-on-one video calls | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Group voice calls (up to 9 participants) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Group video calls (up to 9 participants) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Screen sharing | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Call history | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Call quality indicators | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Mute/unmute | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Camera on/off | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Speaker/earpiece toggle | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Call waiting | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Missed call notifications | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+
+### **4.2 Location Sharing**
+
+| Feature | Spec | Implementation | Status | Gap | Checklist |
+| --- | --- | --- | --- | --- | --- |
+| Share current location | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Live location sharing (real-time for duration) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Search places | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Select location from map | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Nearby places suggestions | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+
+---
+
+## **Phase 5: Public Accounts & Channels**
+
+### **5.1 Public Accounts (Broadcast Channels)**
+
+| Feature | Spec | Implementation | Status | Gap | Checklist |
+| --- | --- | --- | --- | --- | --- |
+| Create public account/channel | ✅ | ⚠️ | ⚠️ Partial | Schema exists, feature not implemented | [ ] |
+| Verified badge for official accounts | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Subscribe/unsubscribe to channels | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Broadcast messages to all subscribers | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Rich media posts (articles, images, videos) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Channel analytics (views, subscribers) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Scheduled posts | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Post categories/tags | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Search channels | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+
+---
+
+## **Phase 6: Additional Features**
+
+### **6.1 Money Transfer (Optional)**
+
+| Feature | Spec | Implementation | Status | Gap | Checklist |
+| --- | --- | --- | --- | --- | --- |
+| Virtual wallet | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Add funds (Stripe, PayPal integration) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Send money to contacts | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Request money | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Transaction history | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Red envelope (lucky money) feature | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Group splitting bills | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+
+### **6.2 Stickers & Emoji**
+
+| Feature | Spec | Implementation | Status | Gap | Checklist |
+| --- | --- | --- | --- | --- | --- |
+| Default sticker packs | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Download sticker packs | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Create custom stickers | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Animated stickers (WebP, Lottie) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Emoji reactions to messages | ✅ | ✅ | ✅ Working |  | [x] |
+| Custom emoji for groups | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+
+### **6.3 Mini Apps/Extensions**
+
+| Feature | Spec | Implementation | Status | Gap | Checklist |
+| --- | --- | --- | --- | --- | --- |
+| Plugin system for third-party apps | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Games within chat | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Polls and surveys | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Task management integration | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Calendar integration | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Translation bot | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |

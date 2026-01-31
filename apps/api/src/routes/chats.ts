@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify'
 import { randomBytes } from 'crypto'
 import { prisma } from '../utils/database.js'
 import { authMiddleware } from '../middleware/auth.js'
-import { createChatSchema, sendMessageSchema } from '../utils/validation.js'
+import { createChatSchema, sendMessageSchema, searchGroupsSchema, joinGroupRequestSchema } from '../utils/validation.js'
 import { rateLimits } from '../middleware/security.js'
 import { parseContactMetadata } from '../services/contacts.js'
 import { extractMentionUsernames } from '../utils/mentions.js'
@@ -186,10 +186,132 @@ export default async function chatRoutes(fastify: FastifyInstance) {
     }
   })
 
+  // Search for groups
+  fastify.get('/search', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { q, limit = 20, offset = 0, visibility } = searchGroupsSchema.parse(request.query)
+      
+      // Build search conditions
+      const searchConditions: any = {
+        type: 'GROUP',
+        name: {
+          contains: q,
+          mode: 'insensitive'
+        }
+      }
+
+      // If visibility filter specified, apply it
+      if (visibility === 'public') {
+        searchConditions.isPublic = true
+      } else if (visibility === 'private') {
+        searchConditions.isPublic = false
+      }
+
+      // Search for groups
+      const groups = await prisma.chat.findMany({
+        where: searchConditions,
+        take: limit,
+        skip: offset,
+        include: {
+          participants: {
+            where: { leftAt: null },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  avatar: true
+                }
+              }
+            }
+          },
+          admins: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  avatar: true
+                }
+              }
+            }
+          },
+          _count: {
+            select: { 
+              participants: {
+                where: { leftAt: null }
+              }
+            }
+          }
+        },
+        orderBy: [
+          { participants: { _count: 'desc' } },
+          { createdAt: 'desc' }
+        ]
+      })
+
+      // Check if user is already a member or has pending requests
+      const groupsWithStatus = await Promise.all(
+        groups.map(async (group) => {
+          const userParticipation = await prisma.chatParticipant.findUnique({
+            where: {
+              userId_chatId: {
+                userId: request.auth.userId,
+                chatId: group.id
+              }
+            }
+          })
+
+          const isMember = userParticipation && !userParticipation.leftAt
+          const canJoin = !isMember && (group.isPublic || group.participants.length < (group.maxMembers || 100))
+
+          return {
+            id: group.id,
+            name: group.name,
+            description: group.description,
+            type: group.type,
+            isPublic: group.isPublic,
+            memberCount: group._count.participants,
+            maxMembers: group.maxMembers,
+            admin: group.admins[0]?.user || null,
+            createdAt: group.createdAt,
+            isMember,
+            canJoin
+          }
+        })
+      )
+
+      return reply.send({
+        success: true,
+        data: {
+          groups: groupsWithStatus,
+          pagination: {
+            limit,
+            offset,
+            hasMore: groups.length === limit
+          }
+        }
+      })
+
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return reply.status(400).send({
+          error: 'Validation failed',
+          details: error.errors
+        })
+      }
+      
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
   // Create a new chat
   fastify.post('/', { preHandler: authMiddleware }, async (request: any, reply) => {
     try {
-      const { type, name, description, participants } = createChatSchema.parse(request.body)
+      const { type, name, description, isPublic, maxMembers, participants } = createChatSchema.parse(request.body)
 
       // For private chats, ensure only 2 participants
       if (type === 'PRIVATE' && participants.length !== 1) {
@@ -243,6 +365,9 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         chatData.admins = {
           create: { userId: request.auth.userId }
         }
+        // Set group privacy and limits
+        chatData.isPublic = isPublic || false
+        if (maxMembers) chatData.maxMembers = maxMembers
       }
 
       const chat = await prisma.chat.create({
@@ -772,13 +897,19 @@ export default async function chatRoutes(fastify: FastifyInstance) {
     }
   })
 
-  // Join chat (for group chats)
+  // Join chat or send join request (for group chats)
   fastify.post('/:chatId/join', { preHandler: authMiddleware }, async (request: any, reply) => {
     try {
       const { chatId } = request.params
+      const { message: joinMessage } = request.body || {}
 
       const chat = await prisma.chat.findUnique({
-        where: { id: chatId }
+        where: { id: chatId },
+        include: {
+          participants: {
+            where: { leftAt: null }
+          }
+        }
       })
 
       if (!chat) {
@@ -803,26 +934,74 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: 'Already a member of this chat' })
       }
 
-      // Join or rejoin chat
-      if (existingParticipation) {
-        await prisma.chatParticipant.update({
-          where: { id: existingParticipation.id },
-          data: { leftAt: null, joinedAt: new Date() }
-        })
-      } else {
-        await prisma.chatParticipant.create({
-          data: {
-            userId: request.auth.userId,
-            chatId
-          }
+      // Check if user has pending join request
+      const pendingRequest = await prisma.groupJoinRequest.findFirst({
+        where: {
+          userId: request.auth.userId,
+          chatId,
+          status: 'PENDING'
+        }
+      })
+
+      if (pendingRequest) {
+        return reply.status(400).send({ error: 'Join request already pending' })
+      }
+
+      // For public groups, join immediately
+      if (chat.isPublic) {
+        // Check member limit
+        if (chat.maxMembers && chat.participants.length >= chat.maxMembers) {
+          return reply.status(400).send({ error: 'Group is full' })
+        }
+
+        // Join or rejoin chat
+        if (existingParticipation) {
+          await prisma.chatParticipant.update({
+            where: { id: existingParticipation.id },
+            data: { leftAt: null, joinedAt: new Date() }
+          })
+        } else {
+          await prisma.chatParticipant.create({
+            data: {
+              userId: request.auth.userId,
+              chatId
+            }
+          })
+        }
+
+        return reply.send({
+          success: true,
+          message: 'Joined group successfully'
         })
       }
 
+      // For private groups, create join request
+      const joinRequest = await prisma.groupJoinRequest.create({
+        data: {
+          userId: request.auth.userId,
+          chatId,
+          message: joinMessage || null,
+          status: 'PENDING'
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatar: true
+            }
+          }
+        }
+      })
+
       return reply.send({
         success: true,
-        message: 'Joined chat successfully'
+        message: 'Join request sent successfully',
+        data: joinRequest
       })
-    } catch (error) {
+
+    } catch (error: any) {
       fastify.log.error(error)
       return reply.status(500).send({ error: 'Internal server error' })
     }

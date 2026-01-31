@@ -1,6 +1,21 @@
 # Codex Work Progress and Reply
 
 ## Summary of Work Completed
+
+### Latest Fixes (January 31, 2026)
+- Fixed group creation API validation errors:
+  - `apps/api/src/utils/validation.ts` (removed conflicting `.min(1)` constraint for participants in createChatSchema)
+  - Enabled GROUP type with empty participants array (creator auto-added)
+  - Resolved 400 Bad Request errors on group creation
+- Fixed React duplicate key errors:
+  - `apps/web/src/components/GroupCreationModal.tsx` (added contact deduplication logic)
+  - Prevented React hydration warnings from duplicate user.id keys
+- Group functionality verified:
+  - API group creation working: POST /api/chats returns 201 with proper group data
+  - Admin detection functional: GET /api/chats/{id} returns admins array
+  - Chat list includes created groups with proper type designation
+
+### Previous Work
 - Implemented contact management API without schema changes:
   - `apps/api/src/routes/contacts.ts` (contacts list, requests list, request send, accept/decline, block/unblock)
   - `apps/api/src/services/contacts.ts` (helpers for private chat + metadata parsing)

@@ -51,7 +51,9 @@ export const createChatSchema = z.object({
   type: z.enum(['PRIVATE', 'GROUP', 'CHANNEL']),
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),
-  participants: z.array(z.string()).min(1, 'At least one participant is required')
+  isPublic: z.boolean().optional().default(false),
+  maxMembers: z.number().int().min(2).max(1000).optional(),
+  participants: z.array(z.string())
 }).refine((data) => {
   // For PRIVATE chats, require exactly one participant (the other person)
   if (data.type === 'PRIVATE' && data.participants.length !== 1) {
@@ -61,7 +63,11 @@ export const createChatSchema = z.object({
   if ((data.type === 'GROUP' || data.type === 'CHANNEL') && data.participants.length >= 0) {
     return true
   }
-  return true
+  // For PRIVATE chats, require exactly one participant
+  if (data.type === 'PRIVATE' && data.participants.length === 1) {
+    return true
+  }
+  return false
 }, {
   message: 'Invalid participant configuration for chat type',
   path: ['participants']
@@ -76,6 +82,19 @@ export const sendMessageSchema = z.object({
 
 export const joinChatSchema = z.object({
   chatId: z.string().cuid('Invalid chat ID')
+})
+
+// Group search validation schema
+export const searchGroupsSchema = z.object({
+  q: z.string().min(2, 'Search query must be at least 2 characters').max(100, 'Search query too long'),
+  limit: z.string().optional().transform((val) => val ? parseInt(val) : 20).pipe(z.number().min(1).max(50)),
+  offset: z.string().optional().transform((val) => val ? parseInt(val) : 0).pipe(z.number().min(0)),
+  visibility: z.enum(['public', 'private']).optional()
+})
+
+// Group join request validation schema
+export const joinGroupRequestSchema = z.object({
+  message: z.string().max(500, 'Join request message too long').optional()
 })
 
 // Post validation schemas
@@ -94,4 +113,6 @@ export type PasswordResetConfirmData = z.infer<typeof passwordResetConfirmSchema
 export type CreateChatData = z.infer<typeof createChatSchema>
 export type SendMessageData = z.infer<typeof sendMessageSchema>
 export type JoinChatData = z.infer<typeof joinChatSchema>
+export type SearchGroupsData = z.infer<typeof searchGroupsSchema>
+export type JoinGroupRequestData = z.infer<typeof joinGroupRequestSchema>
 export type CreatePostData = z.infer<typeof createPostSchema>

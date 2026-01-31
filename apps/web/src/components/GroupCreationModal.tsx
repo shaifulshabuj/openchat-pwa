@@ -37,7 +37,12 @@ export const GroupCreationModal = ({ isOpen, onClose }: GroupCreationModalProps)
   }, [isOpen, refreshAll])
 
   const filteredContacts = useMemo(() => {
-    const acceptedContacts = contacts.filter(contact => 
+    // First deduplicate contacts by user.id
+    const uniqueContacts = contacts.filter((contact, index, self) => 
+      index === self.findIndex(c => c.user.id === contact.user.id)
+    )
+    
+    const acceptedContacts = uniqueContacts.filter(contact => 
       contact.status === 'accepted' && 
       contact.user.id !== user?.id
     )
