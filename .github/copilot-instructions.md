@@ -510,6 +510,106 @@ When encountering errors:
 
 ---
 
+## � SESSION MANAGEMENT
+
+### **Multi-Agent Session Tracking**
+
+OpenChat uses **multiple concurrent agent sessions** for different workflows, tracked in `.terminal` file:
+
+**Session Types:**
+1. **Master Copilot Agent** - Main orchestrator for development
+2. **Local Test/Fix Agent** - Testing and bug fixing workflows
+3. **CI/CD Agent** - Deployment and continuous integration
+4. **Documentation Agent** - Documentation updates
+5. **Codex Sub-Agent** - Code execution delegated by Copilot
+
+### **Session Resume Commands**
+
+**Copilot Sessions:**
+```bash
+# Main development orchestrator (current session)
+copilot --allow-all-tools --resume=33ac3779-f1d3-4059-9309-22abcc2d77e0
+
+# Testing and bug fixes [create new session then update the test-session-id for test agent]
+copilot --allow-all-tools --resume=<test-session-id>
+
+# CI/CD workflows
+copilot --allow-all-tools --resume=0879fa61-6b2e-46ba-8777-ae92a98e1adb
+
+# Documentation updates
+copilot --allow-all-tools --resume=f75c6ebf-b03f-469f-af04-d101401cc52e
+```
+
+**Codex Sessions:**
+```bash
+# Resume Codex sub-agent session
+codex resume 019bf9c5-71ca-7471-9468-36409a237607
+```
+
+### **Session Management Best Practices**
+
+1. **Update `.terminal` After Each Session:**
+   - Record session ID when starting new work
+   - Label session purpose clearly (development, testing, docs, etc.)
+   - Keep active session IDs for continuity
+
+2. **Session Handoff Protocol:**
+   ```bash
+   # When pausing work:
+   1. Checkpoint progress (PHASE 6)
+   2. Note session ID in .terminal
+   3. Update progress documents
+   
+   # When resuming work:
+   1. Resume session from .terminal
+   2. Execute PHASE 0 (DISCOVER)
+   3. Continue from last checkpoint
+   ```
+
+3. **Session Isolation:**
+   - **Master Agent:** Complex feature development, orchestration
+   - **Test Agent:** Bug fixes, test execution, verification
+   - **CI/CD Agent:** Deployment, pipeline fixes, production issues
+   - **Documentation Agent:** README, guides, changelog updates
+   - **Codex Sub-Agent:** Delegated code execution from any Copilot session
+
+4. **Cross-Session Context:**
+   - All sessions read from same progress files (`.codex/works/`, `work_reports/`)
+   - Sessions can pick up where others left off via DISCOVER phase
+   - Commit messages link work across sessions
+
+### **Session Startup Template**
+
+```bash
+# Start new Copilot session
+copilot --allow-all-tools
+
+# Resume existing session (from .terminal)
+copilot --allow-all-tools --resume=<session-id>
+
+# Delegate to Codex (within Copilot session)
+codex "Task description" --apply
+
+# Resume Codex session (for continued work)
+codex resume <codex-session-id>
+```
+
+### **Updating `.terminal` File**
+
+When starting new sessions or updating existing ones:
+
+```bash
+# Add entry to .terminal
+echo "# New session: <purpose>
+<agent-type>: <command-with-session-id>" >> .terminal
+
+# Example:
+echo "# Feature: Message search implementation
+master copilot agent: copilot --allow-all-tools --resume=<new-id>" >> .terminal
+```
+
+---
+
 ## 📚 KEY FILE REFERENCES
 
 **Planning & Context:**
@@ -529,6 +629,9 @@ When encountering errors:
 - `work_reports/02_LOCAL_TEST_THEN_FIX_LOG.md` - Fix history
 - `work_reports/02_LOCAL_TEST_REPORT.md` - Test results
 - `CHANGELOG.md` - Version history
+
+**Session Management:**
+- `.terminal` - Active session IDs and resume commands
 
 **Repository Guidelines:**
 - `AGENTS.md` - Development workflow and commands

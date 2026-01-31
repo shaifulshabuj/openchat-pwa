@@ -6,6 +6,12 @@ This guide runs the API + Web in Docker using the test Postgres/Redis services a
 - Docker Desktop (or Docker Engine) running locally.
 - Ports free: `3000`, `8080`, `5433`, `6380`.
 
+## Build and run in a single command
+
+```bash
+docker builder prune -f && docker compose -f docker-compose.local-test.yml build --no-cache api && docker compose -f docker-compose.local-test.yml build --no-cache web && docker compose -f docker-compose.local-test.yml up -d
+```
+
 ## 1) Build and run API + Web (includes Postgres + Redis)
 
 ```bash
