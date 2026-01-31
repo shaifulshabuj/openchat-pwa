@@ -44,12 +44,15 @@ export default async function chatRoutes(fastify: FastifyInstance) {
   // Get user's chats
   fastify.get('/', { preHandler: authMiddleware }, async (request: any, reply) => {
     try {
+      const includeArchived = request.query?.includeArchived === 'true'
+      
       const chats = await prisma.chat.findMany({
         where: {
           participants: {
             some: {
               userId: request.auth.userId,
-              leftAt: null
+              leftAt: null,
+              ...(includeArchived ? {} : { isArchived: false })
             }
           }
         },
@@ -84,14 +87,11 @@ export default async function chatRoutes(fastify: FastifyInstance) {
           _count: {
             select: { messages: true }
           }
-        },
-        orderBy: {
-          updatedAt: 'desc'
         }
       })
 
-      // Calculate unread count for each chat
-      const chatsWithUnreadCount = await Promise.all(
+      // Calculate unread count and add pin/archive status for each chat
+      const chatsWithMetadata = await Promise.all(
         chats.map(async (chat: any) => {
           const participant = chat.participants.find((p: any) => p.userId === request.auth.userId)
           
@@ -108,14 +108,26 @@ export default async function chatRoutes(fastify: FastifyInstance) {
           return {
             ...chat,
             unreadCount,
-            lastMessage: chat.messages[0] || null
+            lastMessage: chat.messages[0] || null,
+            isPinned: participant?.isPinned || false,
+            isArchived: participant?.isArchived || false
           }
         })
       )
 
+      // Sort chats: pinned first, then by updatedAt
+      const sortedChats = chatsWithMetadata.sort((a, b) => {
+        // Pinned chats go to top
+        if (a.isPinned && !b.isPinned) return -1
+        if (!a.isPinned && b.isPinned) return 1
+        
+        // Then sort by updatedAt (most recent first)
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      })
+
       return reply.send({
         success: true,
-        data: chatsWithUnreadCount
+        data: sortedChats
       })
     } catch (error) {
       fastify.log.error(error)
@@ -388,6 +400,87 @@ export default async function chatRoutes(fastify: FastifyInstance) {
           limit,
           hasMore: messages.length === limit
         }
+      })
+    } catch (error) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Search chat messages
+  fastify.get('/:chatId/messages/search', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { chatId } = request.params
+      const query = request.query?.q as string
+      const page = Number(request.query?.page ?? 1)
+      const limit = Number(request.query?.limit ?? 20)
+
+      if (!query || query.trim().length === 0) {
+        return reply.status(400).send({ error: 'Search query is required' })
+      }
+
+      // Check if user is participant
+      const participation = await prisma.chatParticipant.findUnique({
+        where: {
+          userId_chatId: {
+            userId: request.auth.userId,
+            chatId
+          }
+        }
+      })
+
+      if (!participation || participation.leftAt) {
+        return reply.status(403).send({ error: 'Not a member of this chat' })
+      }
+
+      const messages = await prisma.message.findMany({
+        where: {
+          chatId,
+          isDeleted: false,
+          type: 'TEXT', // Only search text messages
+          content: {
+            contains: query,
+            mode: 'insensitive'
+          },
+          createdAt: {
+            gte: participation.joinedAt
+          }
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatar: true
+            }
+          },
+          replyTo: {
+            include: {
+              sender: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit
+      })
+
+      return reply.send({
+        success: true,
+        data: messages,
+        pagination: {
+          page,
+          limit,
+          hasMore: messages.length === limit
+        },
+        query
       })
     } catch (error) {
       fastify.log.error(error)
@@ -770,6 +863,88 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         message: 'Message deleted successfully'
       })
     } catch (error) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Pin/unpin chat
+  fastify.put('/:chatId/pin', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { chatId } = request.params
+      const { isPinned } = z.object({ isPinned: z.boolean() }).parse(request.body)
+
+      // Check if user is participant
+      const participation = await prisma.chatParticipant.findUnique({
+        where: {
+          userId_chatId: {
+            userId: request.auth.userId,
+            chatId
+          }
+        }
+      })
+
+      if (!participation || participation.leftAt) {
+        return reply.status(403).send({ error: 'Not a member of this chat' })
+      }
+
+      await prisma.chatParticipant.update({
+        where: { id: participation.id },
+        data: { isPinned }
+      })
+
+      return reply.send({
+        success: true,
+        message: isPinned ? 'Chat pinned successfully' : 'Chat unpinned successfully'
+      })
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return reply.status(400).send({
+          error: 'Validation failed',
+          details: error.errors
+        })
+      }
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Archive/unarchive chat
+  fastify.put('/:chatId/archive', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { chatId } = request.params
+      const { isArchived } = z.object({ isArchived: z.boolean() }).parse(request.body)
+
+      // Check if user is participant
+      const participation = await prisma.chatParticipant.findUnique({
+        where: {
+          userId_chatId: {
+            userId: request.auth.userId,
+            chatId
+          }
+        }
+      })
+
+      if (!participation || participation.leftAt) {
+        return reply.status(403).send({ error: 'Not a member of this chat' })
+      }
+
+      await prisma.chatParticipant.update({
+        where: { id: participation.id },
+        data: { isArchived }
+      })
+
+      return reply.send({
+        success: true,
+        message: isArchived ? 'Chat archived successfully' : 'Chat unarchived successfully'
+      })
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return reply.status(400).send({
+          error: 'Validation failed',
+          details: error.errors
+        })
+      }
       fastify.log.error(error)
       return reply.status(500).send({ error: 'Internal server error' })
     }

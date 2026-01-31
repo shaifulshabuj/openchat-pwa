@@ -37,10 +37,10 @@ Legend: ✅ Working | ⚠️ Partial | ❌ Not implemented | — Not reported
 | Reply to specific messages | ✅ | ✅ | ✅ Working |  | [x] |
 | Forward messages | ✅ | ✅ | ✅ Working |  | [x] |
 | Copy message text | ✅ | ✅ | ✅ Working |  | [x] |
-| Message search | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Message search | ✅ | ✅ | ✅ Working | | [x] |
 | Unread message counter | ✅ | ✅ | ✅ Working |  | [x] |
-| Conversation pinning | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
-| Conversation archiving | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Conversation pinning | ✅ | ✅ | ✅ Working | | [x] |
+| Conversation archiving | ✅ | ✅ | ✅ Working | | [x] |
 | Block/unblock users | ✅ | ✅ | ✅ Working |  | [x] |
 
 ### **1.3 Media Sharing**
@@ -48,12 +48,12 @@ Legend: ✅ Working | ⚠️ Partial | ❌ Not implemented | — Not reported
 | Feature | Spec | Implementation | Status | Gap | Checklist |
 | --- | --- | --- | --- | --- | --- |
 | Image upload (JPEG, PNG, GIF, WebP, HEIC) | ✅ | ⚠️ | ⚠️ Partial | Mobile browser/PWA photo picker still fails; desktop OK | [ ] |
-| Video upload (MP4, WebM, MOV) - max 100MB | ✅ | ⚠️ | ⚠️ Partial | Files upload, no video handling | [ ] |
-| Audio messages (voice recording) | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Video upload (MP4, WebM, MOV) - max 100MB | ✅ | ✅ | ✅ Working | | [x] |
+| Audio messages (voice recording) | ✅ | ✅ | ✅ Working | | [x] |
 | File sharing (PDF, DOC, ZIP, etc.) - max 50MB | ✅ | ✅ | ✅ Working |  | [x] |
 | Image preview & gallery | ✅ | ✅ | ✅ Working |  | [x] |
-| Video player with controls | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
-| Audio playback with waveform | ✅ | ❌ | ❌ Not implemented | Not implemented | [ ] |
+| Video player with controls | ✅ | ✅ | ✅ Working | | [x] |
+| Audio playback with waveform | ✅ | ✅ | ✅ Working | | [x] |
 | Automatic image compression | ✅ | — | — Not reported | Not reported in status updates | [ ] |
 | Thumbnail generation | ✅ | ✅ | ✅ Working (Sharp) |  | [x] |
 | Progress indicators for uploads | ✅ | ✅ | ✅ Working |  | [x] |

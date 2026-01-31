@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
   FileText,
   Download,
+  Mic,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/ui/button'
@@ -25,6 +26,10 @@ import { MessageReactions } from '@/components/MessageReactions'
 import { MessageContextMenu } from '@/components/MessageContextMenu'
 import { EditMessageDialog } from '@/components/EditMessageDialog'
 import { MessageReadIndicator, type ReadStatus } from '@/components/MessageReadIndicator'
+import MessageSearch from '@/components/MessageSearch'
+import VideoPlayer from '@/components/VideoPlayer'
+import AudioPlayer from '@/components/AudioPlayer'
+import AudioRecorder from '@/components/AudioRecorder'
 import { reactionsAPI, messageStatusAPI } from '@/lib/api'
 import { contactsAPI } from '@/services/contacts'
 import {
@@ -51,6 +56,7 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isTyping, setIsTyping] = useState<Array<{ userId: string; username: string }>>([])
   const [showFileUpload, setShowFileUpload] = useState(false)
+  const [showAudioRecorder, setShowAudioRecorder] = useState(false)
   const [editingMessage, setEditingMessage] = useState<{ id: string; content: string } | null>(null)
   const [isEditLoading, setIsEditLoading] = useState(false)
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null)
@@ -505,6 +511,66 @@ export default function ChatPage({ params }: ChatPageProps) {
         variant: 'destructive',
         title: 'Upload failed',
         description: 'Unable to send file message. Please try again.',
+      })
+    }
+  }
+
+  const handleAudioRecording = async (audioBlob: Blob, duration: number) => {
+    if (!canSendMessages) {
+      toast({
+        variant: 'destructive',
+        title: 'Messaging disabled',
+        description: sendDisabledReason,
+      })
+      return
+    }
+
+    try {
+      // Create FormData to upload the audio blob
+      const formData = new FormData()
+      formData.append('file', audioBlob, `voice_message_${Date.now()}.webm`)
+
+      const response = await fetch('/api/upload/file', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Audio upload failed')
+      }
+
+      const fileInfo = await response.json()
+
+      // Send audio message
+      await chatAPI.sendMessage(chatId, {
+        content: `🎵 Voice message (${Math.floor(duration)}s)`,
+        type: 'FILE',
+        replyToId: replyToMessage?.id,
+        metadata: {
+          ...fileInfo.data,
+          duration,
+          url: resolveUrl(fileInfo.data.url),
+          mimetype: 'audio/webm',
+        }
+      })
+
+      setShowAudioRecorder(false)
+      setReplyToMessage(null)
+      scrollToBottom()
+
+      toast({
+        title: 'Voice message sent',
+        description: 'Your audio message has been sent.',
+      })
+    } catch (error) {
+      console.error('Error sending audio message:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Upload failed',
+        description: 'Unable to send voice message. Please try again.',
       })
     }
   }
@@ -973,6 +1039,89 @@ export default function ChatPage({ params }: ChatPageProps) {
     )
   }
 
+  const renderVideoMessage = (message: any) => {
+    const metadata = normalizeMetadata(message.metadata) as any
+    const fileUrl = metadata?.url || null
+    
+    if (!fileUrl) return null
+
+    // Check if it's a video by checking the content for video indicators or metadata
+    const isVideo = metadata?.mimetype?.startsWith('video/') || 
+      message.content.includes('🎥') ||
+      /\.(mp4|webm|mov)$/i.test(fileUrl)
+
+    if (!isVideo) return null
+
+    return (
+      <div className="max-w-sm">
+        <VideoPlayer 
+          src={fileUrl}
+          className="rounded-lg"
+          width="100%"
+          height="auto"
+        />
+        {metadata?.originalName && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            📹 {metadata.originalName}
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  const renderAudioMessage = (message: any) => {
+    const metadata = normalizeMetadata(message.metadata) as any
+    const fileUrl = metadata?.url || null
+    
+    if (!fileUrl) return null
+
+    // Check if it's an audio file
+    const isAudio = metadata?.mimetype?.startsWith('audio/') || 
+      message.content.includes('🎵') ||
+      /\.(mp3|wav|webm|ogg|m4a)$/i.test(fileUrl)
+
+    if (!isAudio) return null
+
+    return (
+      <AudioPlayer 
+        src={fileUrl}
+        title={metadata?.originalName}
+        duration={metadata?.duration}
+        className="max-w-sm"
+      />
+    )
+  }
+
+  const renderImageMessage = (message: any) => {
+    const metadata = normalizeMetadata(message.metadata) as any
+    const fileUrl = metadata?.url || null
+    
+    if (!fileUrl) return null
+
+    // Check if it's an image
+    const isImage = metadata?.mimetype?.startsWith('image/') || 
+      message.content.includes('🖼️') ||
+      /\.(jpg|jpeg|png|gif|webp|heic|heif)$/i.test(fileUrl)
+
+    if (!isImage) return null
+
+    return (
+      <div className="max-w-sm">
+        <img 
+          src={fileUrl}
+          alt={metadata?.originalName || 'Shared image'}
+          className="rounded-lg max-w-full h-auto cursor-pointer"
+          onClick={() => window.open(fileUrl, '_blank')}
+        />
+        {metadata?.originalName && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            🖼️ {metadata.originalName}
+          </p>
+        )}
+      </div>
+    )
+  }
+
   const renderContactMessage = (
     message: Message,
     metadata: ContactMetadata,
@@ -1078,6 +1227,10 @@ export default function ChatPage({ params }: ChatPageProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              <MessageSearch 
+                chatId={chatId} 
+                onMessageClick={(messageId) => scrollToMessage(messageId)} 
+              />
               <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
                 <Phone className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </button>
@@ -1157,7 +1310,8 @@ export default function ChatPage({ params }: ChatPageProps) {
                         {contactContent ? (
                           contactContent
                         ) : message.type === 'FILE' || message.content.startsWith('📎') ? (
-                          renderFileMessage(message)
+                          // Check for video, audio, images, then other files
+                          renderVideoMessage(message) || renderAudioMessage(message) || renderImageMessage(message) || renderFileMessage(message)
                         ) : (
                           <>
                             {message.replyTo && (
@@ -1295,6 +1449,14 @@ export default function ChatPage({ params }: ChatPageProps) {
               <Paperclip className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
 
+            <button
+              onClick={() => setShowAudioRecorder(true)}
+              disabled={!canSendMessages}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Mic className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            </button>
+
             <div className="flex-1 relative">
               <Input
                 value={newMessage}
@@ -1335,6 +1497,20 @@ export default function ChatPage({ params }: ChatPageProps) {
               onFileUploaded={handleFileUploaded}
               onClose={() => setShowFileUpload(false)}
             />
+          )}
+
+          {/* Audio Recorder Modal */}
+          {showAudioRecorder && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 m-4 max-w-md w-full">
+                <h3 className="text-lg font-semibold mb-4">Record Voice Message</h3>
+                <AudioRecorder
+                  onRecordingComplete={handleAudioRecording}
+                  onCancel={() => setShowAudioRecorder(false)}
+                  maxDuration={300}
+                />
+              </div>
+            </div>
           )}
         </footer>
 

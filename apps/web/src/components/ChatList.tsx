@@ -2,11 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { MessageSquare } from 'lucide-react'
+import { MessageSquare, Pin, Archive, MoreHorizontal } from 'lucide-react'
 import { chatAPI, type Chat } from '@/lib/api'
 import { chatRoute } from '@/lib/routes'
 import { useAuthStore } from '@/store/auth'
 import { useToast } from '@/hooks/use-toast'
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu'
+import { Button } from '@/components/ui/button'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 
@@ -15,6 +22,7 @@ dayjs.extend(relativeTime)
 export function ChatList() {
   const [chats, setChats] = useState<Chat[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [includeArchived, setIncludeArchived] = useState(false)
   const { user } = useAuthStore()
   const { toast } = useToast()
   const router = useRouter()
@@ -22,7 +30,7 @@ export function ChatList() {
   useEffect(() => {
     const loadChats = async () => {
       try {
-        const response = await chatAPI.getChats()
+        const response = await chatAPI.getChats(includeArchived)
         if (response.success) {
           setChats(response.data)
         }
@@ -41,7 +49,49 @@ export function ChatList() {
     if (user) {
       loadChats()
     }
-  }, [user])
+  }, [user, includeArchived])
+
+  const handlePinChat = async (chatId: string, isPinned: boolean, event: React.MouseEvent) => {
+    event.stopPropagation()
+    try {
+      await chatAPI.pinChat(chatId, !isPinned)
+      setChats(prev => 
+        prev.map(chat => 
+          chat.id === chatId ? { ...chat, isPinned: !isPinned } : chat
+        )
+      )
+      toast({
+        title: !isPinned ? 'Chat pinned' : 'Chat unpinned',
+        description: !isPinned ? 'Chat moved to top' : 'Chat unpinned',
+      })
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update chat',
+      })
+    }
+  }
+
+  const handleArchiveChat = async (chatId: string, isArchived: boolean, event: React.MouseEvent) => {
+    event.stopPropagation()
+    try {
+      await chatAPI.archiveChat(chatId, !isArchived)
+      setChats(prev => 
+        prev.filter(chat => chat.id !== chatId)
+      )
+      toast({
+        title: !isArchived ? 'Chat archived' : 'Chat unarchived',
+        description: !isArchived ? 'Chat moved to archive' : 'Chat restored from archive',
+      })
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update chat',
+      })
+    }
+  }
 
   const getChatDisplayName = (chat: Chat) => {
     if (chat.type === 'GROUP' || chat.type === 'CHANNEL') {
@@ -179,12 +229,46 @@ export function ChatList() {
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {displayName}
-                  </h3>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">
-                    {timeAgo}
-                  </span>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {displayName}
+                    </h3>
+                    {(chat as any).isPinned && (
+                      <Pin className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                      {timeAgo}
+                    </span>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal className="w-3 h-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem 
+                          onClick={(e) => handlePinChat(chat.id, (chat as any).isPinned, e)}
+                        >
+                          <Pin className="w-4 h-4 mr-2" />
+                          {(chat as any).isPinned ? 'Unpin' : 'Pin'} Chat
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={(e) => handleArchiveChat(chat.id, (chat as any).isArchived, e)}
+                        >
+                          <Archive className="w-4 h-4 mr-2" />
+                          {(chat as any).isArchived ? 'Unarchive' : 'Archive'} Chat
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
                 
                 <p className="text-sm text-gray-600 dark:text-gray-400 truncate">

@@ -150,8 +150,10 @@ export const authAPI = {
 
 // Chat API functions
 export const chatAPI = {
-  async getChats(): Promise<{ success: boolean; data: Chat[] }> {
-    const response = await api.get('/api/chats')
+  async getChats(includeArchived = false): Promise<{ success: boolean; data: Chat[] }> {
+    const response = await api.get('/api/chats', {
+      params: includeArchived ? { includeArchived: 'true' } : {}
+    })
     return response.data
   },
 
@@ -214,6 +216,28 @@ export const chatAPI = {
 
   async deleteMessage(chatId: string, messageId: string): Promise<{ success: boolean }> {
     const response = await api.delete(`/api/chats/${chatId}/messages/${messageId}`)
+    return response.data
+  },
+
+  async pinChat(chatId: string, isPinned: boolean): Promise<{ success: boolean; message: string }> {
+    const response = await api.put(`/api/chats/${chatId}/pin`, { isPinned })
+    return response.data
+  },
+
+  async archiveChat(chatId: string, isArchived: boolean): Promise<{ success: boolean; message: string }> {
+    const response = await api.put(`/api/chats/${chatId}/archive`, { isArchived })
+    return response.data
+  },
+
+  async searchMessages(chatId: string, query: string, page = 1, limit = 20): Promise<{ 
+    success: boolean; 
+    data: Message[]; 
+    pagination: { page: number; limit: number; hasMore: boolean }; 
+    query: string 
+  }> {
+    const response = await api.get(`/api/chats/${chatId}/messages/search`, {
+      params: { q: query, page, limit }
+    })
     return response.data
   },
 }

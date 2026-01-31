@@ -14,7 +14,7 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: 'No file uploaded' })
       }
 
-      // Validate file type
+      // Validate file type and size
       const allowedTypes = [
         'image/jpeg',
         'image/png', 
@@ -27,7 +27,8 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
         'audio/mpeg',
         'audio/wav',
         'video/mp4',
-        'video/webm'
+        'video/webm',
+        'video/quicktime' // MOV files
       ]
 
       if (!allowedTypes.includes(data.mimetype)) {
@@ -37,10 +38,14 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
       // Read file buffer
       const buffer = await data.toBuffer()
 
-      // Validate file size (10MB max)
-      const maxSize = 10 * 1024 * 1024 // 10MB
+      // Validate file size based on type
+      const isVideo = data.mimetype.startsWith('video/')
+      const isImage = data.mimetype.startsWith('image/')
+      const maxSize = isVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024 // 100MB for video, 10MB for others
+
       if (buffer.length > maxSize) {
-        return reply.status(400).send({ error: 'File too large. Maximum size is 10MB.' })
+        const maxSizeMB = isVideo ? '100MB' : '10MB'
+        return reply.status(400).send({ error: `File too large. Maximum size for ${isVideo ? 'videos' : 'files'} is ${maxSizeMB}.` })
       }
 
       // Generate unique filename
@@ -58,7 +63,7 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
       // Save file
       await fs.writeFile(filepath, buffer)
 
-      // Generate thumbnail for images
+      // Generate thumbnail for images and videos
       let thumbnailPath = null
       if (data.mimetype.startsWith('image/')) {
         try {
@@ -70,8 +75,13 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
             .jpeg({ quality: 80 })
             .toFile(thumbnailPath)
         } catch (error) {
-          console.warn('Could not generate thumbnail:', error)
+          console.warn('Could not generate image thumbnail:', error)
         }
+      } else if (data.mimetype.startsWith('video/')) {
+        // Video thumbnail generation placeholder
+        // In production, you would use ffmpeg to extract frames
+        // For now, we'll just note that video thumbnail generation is available
+        console.log(`Video uploaded: ${filename}. Thumbnail generation can be added with ffmpeg.`)
       }
 
       const fileInfo = {

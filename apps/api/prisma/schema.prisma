@@ -53,12 +53,14 @@ model Chat {
 }
 
 model ChatParticipant {
-  id       String @id @default(cuid())
-  userId   String
-  chatId   String
-  joinedAt DateTime @default(now())
-  leftAt   DateTime?
-  unreadCount Int @default(0)
+  id          String   @id @default(cuid())
+  userId      String
+  chatId      String
+  joinedAt    DateTime @default(now())
+  leftAt      DateTime?
+  unreadCount Int      @default(0)
+  isPinned    Boolean  @default(false)
+  isArchived  Boolean  @default(false)
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
