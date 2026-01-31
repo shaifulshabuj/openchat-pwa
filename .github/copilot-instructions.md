@@ -105,7 +105,7 @@ Task 3: Verify contact flow with Playwright
 
 **Command Format:**
 ```bash
-codex "Task description with full context, file paths, and quality criteria. Follow patterns in <file references>. Verify <specific check>." --apply
+codex apply "Task description with full context, file paths, and quality criteria. Follow patterns in <file references>. Verify <specific check>."
 ```
 
 **Instruction Best Practices:**
@@ -130,13 +130,13 @@ codex "Task description with full context, file paths, and quality criteria. Fol
 **Example Commands:**
 ```bash
 # Standard development task
-codex "Add POST /api/contacts/request endpoint to apps/api/src/routes/contacts.ts following the pattern in apps/api/src/routes/auth.ts. Accept {targetUserId} in body, create contact request, return 201 with {requestId, status}. Add basic validation." --apply
+codex apply "Add POST /api/contacts/request endpoint to apps/api/src/routes/contacts.ts following the pattern in apps/api/src/routes/auth.ts. Accept {targetUserId} in body, create contact request, return 201 with {requestId, status}. Add basic validation."
 
 # Docker testing task
-codex "Build and test Docker stack using .codex/skills/openchat-docker-local-testing/SKILL.md workflow. Run: docker builder prune -f && docker compose -f docker-compose.local-test.yml build --no-cache && docker compose -f docker-compose.local-test.yml up -d. Verify containers start successfully at localhost:3000 (web) and localhost:8080 (api)." --apply
+codex apply "Build and test Docker stack using .codex/skills/openchat-docker-local-testing/SKILL.md workflow. Run: docker builder prune -f && docker compose -f docker-compose.local-test.yml build --no-cache && docker compose -f docker-compose.local-test.yml up -d. Verify containers start successfully at localhost:3000 (web) and localhost:8080 (api)."
 
 # UI testing task
-codex "Run Playwright UI flow per .codex/skills/openchat-playwright-ui-testing/SKILL.md. Create 2 test users, send contact request, accept it, verify contact appears in list. Log results to work_reports/02_LOCAL_TEST_REPORT.md with timestamp." --apply
+codex apply "Run Playwright UI flow per .codex/skills/openchat-playwright-ui-testing/SKILL.md. Create 2 test users, send contact request, accept it, verify contact appears in list. Log results to work_reports/02_LOCAL_TEST_REPORT.md with timestamp."
 ```
 
 ---
@@ -589,7 +589,7 @@ copilot --allow-all-tools
 copilot --allow-all-tools --resume=<session-id>
 
 # Delegate to Codex (within Copilot session)
-codex "Task description" --apply
+codex apply "Task description"
 
 # Resume Codex session (for continued work)
 codex resume <codex-session-id>
