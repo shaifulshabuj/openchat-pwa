@@ -55,7 +55,7 @@ export default function MessageSearch({
   const [totalResults, setTotalResults] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const searchTimeoutRef = useRef<NodeJS.Timeout>()
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Debounced search
   const performSearch = async (searchQuery: string, page = 1) => {

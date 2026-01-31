@@ -83,6 +83,19 @@ export default function ChatPage({ params }: ChatPageProps) {
   const { toast } = useToast()
   const router = useRouter()
 
+  const resolveUrl = (url?: string | null) => {
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || ''
+    if (!url) return null
+    if (url.startsWith('http')) return url
+    return apiBase ? `${apiBase}${url}` : url
+  }
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior })
+    }
+  }
+
   type ContactMetadata =
     | {
         kind: 'contact-request'

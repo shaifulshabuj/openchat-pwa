@@ -32,7 +32,7 @@ export default function VideoPlayer({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  const hideControlsTimeoutRef = useRef<NodeJS.Timeout>()
+  const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const video = videoRef.current
