@@ -13,6 +13,12 @@ type ContactMetadata =
       blockerId: string
       targetUserId: string
     }
+  | {
+      kind?: 'contact-meta'
+      isFavorite?: boolean
+      nickname?: string | null
+      labels?: string[]
+    }
 
 export const parseContactMetadata = (raw?: string | null): ContactMetadata | null => {
   if (!raw) return null

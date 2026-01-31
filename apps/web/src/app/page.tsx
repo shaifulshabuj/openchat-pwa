@@ -192,7 +192,7 @@ export default function Home() {
                     Profile management and preferences
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    <Button onClick={() => router.push('/profile')} size="sm">
+                    <Button onClick={() => router.push('/profile' as any)} size="sm">
                       Edit Profile
                     </Button>
                     <Button onClick={handleLogout} variant="outline" size="sm">

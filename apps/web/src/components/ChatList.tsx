@@ -194,10 +194,10 @@ export function ChatList() {
           : dayjs(chat.createdAt).fromNow()
 
         return (
-          <button
+          <div
             key={chat.id}
+            className="w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
             onClick={() => router.push(chatRoute(chat.id) as any)}
-            className="w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
           >
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -283,7 +283,7 @@ export function ChatList() {
                 )}
               </div>
             </div>
-          </button>
+          </div>
         )
       })}
     </div>

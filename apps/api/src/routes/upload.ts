@@ -48,10 +48,33 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: `File too large. Maximum size for ${isVideo ? 'videos' : 'files'} is ${maxSizeMB}.` })
       }
 
+      // Automatically compress images if they're over 2MB
+      let processedBuffer = buffer
+      let finalMimetype = data.mimetype
+      let compressedFilename = data.filename
+
+      if (isImage && buffer.length > 2 * 1024 * 1024) { // 2MB threshold
+        try {
+          // Convert and compress image
+          processedBuffer = await sharp(buffer)
+            .jpeg({ quality: 85, progressive: true })
+            .toBuffer()
+          
+          finalMimetype = 'image/jpeg'
+          compressedFilename = data.filename.replace(/\.[^.]+$/, '.jpg')
+          
+          console.log(`Compressed ${data.filename}: ${buffer.length} → ${processedBuffer.length} bytes`)
+        } catch (error) {
+          console.error('Image compression failed:', error)
+          // Fall back to original if compression fails
+          processedBuffer = buffer
+        }
+      }
+
       // Generate unique filename
       const timestamp = Date.now()
       const userId = request.auth.userId
-      const ext = path.extname(data.filename || '')
+      const ext = path.extname(compressedFilename || data.filename || '')
       const filename = `${userId}_${timestamp}${ext}`
       
       // Ensure upload directory exists
@@ -60,24 +83,24 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
       
       const filepath = path.join(uploadDir, filename)
       
-      // Save file
-      await fs.writeFile(filepath, buffer)
+      // Save processed file
+      await fs.writeFile(filepath, processedBuffer)
 
       // Generate thumbnail for images and videos
       let thumbnailPath = null
-      if (data.mimetype.startsWith('image/')) {
+      if (isImage) {
         try {
           const thumbnailFilename = `thumb_${filename}`
           thumbnailPath = path.join(uploadDir, thumbnailFilename)
           
-          await sharp(buffer)
+          await sharp(processedBuffer)
             .resize(200, 200, { fit: 'cover' })
             .jpeg({ quality: 80 })
             .toFile(thumbnailPath)
         } catch (error) {
           console.warn('Could not generate image thumbnail:', error)
         }
-      } else if (data.mimetype.startsWith('video/')) {
+      } else if (isVideo) {
         // Video thumbnail generation placeholder
         // In production, you would use ffmpeg to extract frames
         // For now, we'll just note that video thumbnail generation is available
@@ -86,14 +109,15 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
 
       const fileInfo = {
         id: `file_${timestamp}`,
-        filename: data.filename || filename,
+        filename: compressedFilename || data.filename || filename,
         originalName: data.filename,
-        mimetype: data.mimetype,
-        size: buffer.length,
+        mimetype: finalMimetype,
+        size: processedBuffer.length,
         url: `/api/upload/files/${filename}`,
         thumbnailUrl: thumbnailPath ? `/api/upload/files/thumb_${filename}` : null,
         uploadedBy: userId,
-        uploadedAt: new Date().toISOString()
+        uploadedAt: new Date().toISOString(),
+        compressed: processedBuffer.length < buffer.length
       }
 
       return reply.status(201).send({

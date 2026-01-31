@@ -10,6 +10,7 @@ import {
   Phone,
   Video,
   MoreVertical,
+  Settings,
   Image as ImageIcon,
   FileText,
   Download,
@@ -30,6 +31,7 @@ import MessageSearch from '@/components/MessageSearch'
 import VideoPlayer from '@/components/VideoPlayer'
 import AudioPlayer from '@/components/AudioPlayer'
 import AudioRecorder from '@/components/AudioRecorder'
+import GroupSettings from '@/components/GroupSettings'
 import { reactionsAPI, messageStatusAPI } from '@/lib/api'
 import { contactsAPI } from '@/services/contacts'
 import {
@@ -76,6 +78,7 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [forwardLoading, setForwardLoading] = useState(false)
   const [forwardNote, setForwardNote] = useState('')
   const [forwardSelected, setForwardSelected] = useState<Set<string>>(new Set())
+  const [showGroupSettings, setShowGroupSettings] = useState(false)
 
   const { user } = useAuthStore()
   const { refreshAll: refreshContacts } = useContactsStore()
@@ -89,6 +92,13 @@ export default function ChatPage({ params }: ChatPageProps) {
     if (url.startsWith('http')) return url
     return apiBase ? `${apiBase}${url}` : url
   }
+
+  const isGroupChat = chat?.type === 'GROUP'
+
+  const isGroupAdmin = useMemo(() => {
+    if (!chat || !user || chat.type !== 'GROUP') return false
+    return chat.admins?.some((admin) => admin.user.id === user.id) || false
+  }, [chat, user])
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     if (messagesEndRef.current) {
@@ -1244,6 +1254,14 @@ export default function ChatPage({ params }: ChatPageProps) {
                 chatId={chatId} 
                 onMessageClick={(messageId) => scrollToMessage(messageId)} 
               />
+              {isGroupChat && (
+                <button
+                  onClick={() => setShowGroupSettings(true)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                >
+                  <Settings className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                </button>
+              )}
               <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
                 <Phone className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </button>
@@ -1256,6 +1274,20 @@ export default function ChatPage({ params }: ChatPageProps) {
             </div>
           </div>
         </header>
+
+        {showGroupSettings && chat && isGroupChat && (
+          <GroupSettings
+            chatId={chatId}
+            groupName={chat.name || 'Group Chat'}
+            groupDescription={chat.description}
+            groupAvatar={resolveUrl(chat.avatar) || undefined}
+            isAdmin={isGroupAdmin}
+            onClose={() => setShowGroupSettings(false)}
+            onUpdate={(data) => {
+              setChat((prev) => (prev ? { ...prev, ...data } : prev))
+            }}
+          />
+        )}
 
         {/* Messages Area */}
         <main

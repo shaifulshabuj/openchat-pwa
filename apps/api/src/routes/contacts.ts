@@ -80,11 +80,21 @@ export default async function contactRoutes(fastify: FastifyInstance) {
         const isBlocked =
           blockMetadata?.kind === 'contact-block' && blockMetadata.status === 'blocked'
 
+        // Get contact management metadata (favorites, nickname, labels)
+        const contactMessage = chat.messages.find((message) => {
+          const metadata = parseContactMetadata(message.metadata)
+          return metadata && 'isFavorite' in metadata && (metadata.isFavorite !== undefined || metadata.nickname || metadata.labels)
+        })
+        const contactMetadata = contactMessage ? JSON.parse(contactMessage.metadata as string || '{}') : {}
+
         return {
           chatId: chat.id,
           user: contact.user,
           status,
-          isBlocked
+          isBlocked,
+          isFavorite: contactMetadata.isFavorite || false,
+          nickname: contactMetadata.nickname || null,
+          labels: contactMetadata.labels || []
         }
       })
       .filter(Boolean)
@@ -382,4 +392,173 @@ export default async function contactRoutes(fastify: FastifyInstance) {
       })
     }
   )
+
+  // Contact management endpoints
+  fastify.put('/:contactId/favorite', { preHandler: [rateLimits.api, authMiddleware] }, async (request: any, reply) => {
+    const { contactId } = request.params
+    const { isFavorite } = request.body
+    const userId = request.auth.userId
+
+    try {
+      // Find the private chat for this contact relationship
+      const chat = await prisma.chat.findFirst({
+        where: {
+          type: 'PRIVATE',
+          participants: {
+            every: {
+              userId: { in: [userId, contactId] }
+            }
+          }
+        },
+        include: {
+          messages: {
+            where: {
+              type: 'CONTACT',
+              senderId: userId
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          }
+        }
+      })
+
+      if (!chat || !chat.messages.length) {
+        return reply.status(404).send({ error: 'Contact relationship not found' })
+      }
+
+      const firstMessage = chat.messages[0]
+      if (!firstMessage) {
+        return reply.status(404).send({ error: 'Contact metadata not found' })
+      }
+
+      // Update contact metadata to include favorite status
+      const existingMetadata = JSON.parse(firstMessage.metadata as string || '{}')
+      const updatedMetadata = {
+        ...existingMetadata,
+        isFavorite
+      }
+
+      await prisma.message.update({
+        where: { id: firstMessage.id },
+        data: { metadata: JSON.stringify(updatedMetadata) }
+      })
+
+      reply.send({ success: true, isFavorite })
+    } catch (error) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Failed to update favorite status' })
+    }
+  })
+
+  fastify.put('/:contactId/nickname', { preHandler: [rateLimits.api, authMiddleware] }, async (request: any, reply) => {
+    const { contactId } = request.params
+    const { nickname } = request.body
+    const userId = request.auth.userId
+
+    try {
+      // Find the private chat for this contact relationship
+      const chat = await prisma.chat.findFirst({
+        where: {
+          type: 'PRIVATE',
+          participants: {
+            every: {
+              userId: { in: [userId, contactId] }
+            }
+          }
+        },
+        include: {
+          messages: {
+            where: {
+              type: 'CONTACT',
+              senderId: userId
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          }
+        }
+      })
+
+      if (!chat || !chat.messages.length) {
+        return reply.status(404).send({ error: 'Contact relationship not found' })
+      }
+
+      const firstMessage = chat.messages[0]
+      if (!firstMessage) {
+        return reply.status(404).send({ error: 'Contact metadata not found' })
+      }
+
+      // Update contact metadata to include nickname
+      const existingMetadata = JSON.parse(firstMessage.metadata as string || '{}')
+      const updatedMetadata = {
+        ...existingMetadata,
+        nickname
+      }
+
+      await prisma.message.update({
+        where: { id: firstMessage.id },
+        data: { metadata: JSON.stringify(updatedMetadata) }
+      })
+
+      reply.send({ success: true, nickname })
+    } catch (error) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Failed to update nickname' })
+    }
+  })
+
+  fastify.put('/:contactId/labels', { preHandler: [rateLimits.api, authMiddleware] }, async (request: any, reply) => {
+    const { contactId } = request.params
+    const { labels } = request.body // Array of label strings
+    const userId = request.auth.userId
+
+    try {
+      // Find the private chat for this contact relationship
+      const chat = await prisma.chat.findFirst({
+        where: {
+          type: 'PRIVATE',
+          participants: {
+            every: {
+              userId: { in: [userId, contactId] }
+            }
+          }
+        },
+        include: {
+          messages: {
+            where: {
+              type: 'CONTACT',
+              senderId: userId
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          }
+        }
+      })
+
+      if (!chat || !chat.messages.length) {
+        return reply.status(404).send({ error: 'Contact relationship not found' })
+      }
+
+      const firstMessage = chat.messages[0]
+      if (!firstMessage) {
+        return reply.status(404).send({ error: 'Contact metadata not found' })
+      }
+
+      // Update contact metadata to include labels
+      const existingMetadata = JSON.parse(firstMessage.metadata as string || '{}')
+      const updatedMetadata = {
+        ...existingMetadata,
+        labels: labels || []
+      }
+
+      await prisma.message.update({
+        where: { id: firstMessage.id },
+        data: { metadata: JSON.stringify(updatedMetadata) }
+      })
+
+      reply.send({ success: true, labels })
+    } catch (error) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Failed to update labels' })
+    }
+  })
 }

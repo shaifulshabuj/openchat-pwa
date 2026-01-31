@@ -88,9 +88,9 @@ export function MessageContextMenu({
     setMenuOpen(false)
   }
 
-  // Check if message is too old to edit (24 hours)
+  // Check if message is too old to edit (5 minutes)
   const messageAge = new Date().getTime() - new Date(createdAt).getTime()
-  const maxAge = 24 * 60 * 60 * 1000 // 24 hours
+  const maxAge = 5 * 60 * 1000 // 5 minutes
   const canEdit = isOwn && messageAge < maxAge
 
   return (

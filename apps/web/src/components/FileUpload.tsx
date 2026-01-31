@@ -81,6 +81,15 @@ export function FileUpload({
     const input = fileInputRef.current
     if (!input) return
     input.value = ''
+    
+    // Mobile-specific handling
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    
+    if (isMobile) {
+      // On mobile, use capture for better camera integration
+      input.setAttribute('capture', 'environment')
+    }
+    
     if (typeof (input as HTMLInputElement & { showPicker?: () => void }).showPicker === 'function') {
       ;(input as HTMLInputElement & { showPicker?: () => void }).showPicker?.()
       return
@@ -184,10 +193,25 @@ export function FileUpload({
     }
   }
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files.length > 0) {
-      handleFileSelect(files[0])
+      const file = files[0]
+      
+      // Handle HEIC/HEIF files by attempting to convert them
+      if (file.type === 'image/heic' || file.type === 'image/heif' || 
+          file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+        try {
+          // For now, try to process as-is and let the server handle it
+          // In the future, we could add client-side conversion
+          handleFileSelect(file)
+        } catch (error) {
+          setError('HEIC/HEIF format not supported on this device. Please use JPEG or PNG.')
+          return
+        }
+      } else {
+        handleFileSelect(file)
+      }
     }
   }
 
@@ -269,7 +293,7 @@ export function FileUpload({
                   ref={fileInputRef}
                   type="file"
                   onChange={handleFileInputChange}
-                  accept={allowedTypes.join(',')}
+                  accept={allowedTypes.includes('image/*') ? 'image/*' : allowedTypes.join(',')}
                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -278,7 +302,7 @@ export function FileUpload({
                 <div className="pointer-events-none flex flex-col items-center">
                   <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    Drag and drop your file here, or tap to choose
+                    Tap to choose from camera, photo library, or files
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-500">
                     Maximum {maxSize}MB • Images, Documents, Audio, Video

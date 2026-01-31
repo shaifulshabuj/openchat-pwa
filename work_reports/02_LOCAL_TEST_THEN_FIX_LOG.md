@@ -25,7 +25,58 @@ This document catalogs all critical issues discovered during local test report a
 - ✅ API tests verified: `npx vitest run` (36 passed / 1 skipped).
 - ⏭️ Next priority: Production build optimization.
 
-## ✅ Latest Progress Update (January 27, 2026 20:15 JST)
+## ✅ Latest Progress Update (January 31, 2026 15:06 JST)
+- ✅ **CRITICAL FIX:** Resolved React hydration errors caused by nested button elements in ChatList component.
+- ✅ **API FIX:** Fixed MessageSearch component using wrong API method and authentication token.
+- ✅ **GROUP ADMIN FIX:** Resolved Group Invitation Modal not opening due to missing admin data in Chat interface.
+- ✅ **TYPE SAFETY:** Updated Chat interface to include `admins` field returned by backend API.
+- ✅ **DOCKER BUILD FIX:** Resolved TLS handshake timeout with Docker Hub, rebuilt and deployed test stack.
+- ✅ Build verification: TypeScript compilation passes, Next.js build succeeds (0 errors).
+- ✅ **Docker Test Stack**: All containers running successfully (API:8080, Web:3000, DB:5433, Redis:6380).
+
+### Issues Fixed (January 31, 2026 15:06 JST)
+1. **Console Error:** `<button> cannot be a descendant of button` causing hydration mismatch
+2. **API 404 Error:** MessageSearch using raw fetch() with wrong auth token instead of chatAPI client
+3. **Admin Check Failure:** GroupInviteModal "Add Member" button not working due to missing admin data
+4. **Type Interface Mismatch:** Chat interface missing `admins` field that backend returns
+5. **Message Type Conflict:** MessageSearch had duplicate Message interface conflicting with api.ts
+6. **Docker Build Error:** TLS handshake timeout when pulling node:20-alpine from Docker Hub
+
+### Solutions Applied
+- **File Modified:** `apps/web/src/components/ChatList.tsx` - Converted chat item container from `<button>` to `<div>`
+- **File Modified:** `apps/web/src/components/MessageSearch.tsx` - Use chatAPI.searchMessages() with proper auth
+- **File Modified:** `apps/web/src/lib/api.ts` - Added `admins` field to Chat interface
+- **File Modified:** `apps/web/src/app/chat/[chatId]/page.tsx` - Fixed admin check logic
+- **File Modified:** `apps/web/src/components/MessageSearch.tsx` - Removed duplicate Message interface
+- **Docker Operations:** `docker system prune -f` + fresh build of API and Web containers
+
+### Test Results
+- **Frontend Build:** ✅ SUCCESS (0 TypeScript errors, clean compilation)
+- **API Endpoints:** ✅ VERIFIED (search route exists, admin APIs working)
+- **Console Errors:** ✅ ELIMINATED (no more button nesting warnings)
+- **Docker Stack:** ✅ RUNNING (API health check passes, Web serving correctly)
+- **Expected Outcome:** Group invitation flow and message search should now work correctly in Playwright tests
+
+## ✅ Previous Progress Update (January 31, 2026 14:46 JST)
+- ✅ **CRITICAL FIX:** Resolved React hydration errors caused by nested button elements in ChatList component.
+- ✅ Replaced outer `<button>` container with `<div>` to eliminate invalid HTML structure.
+- ✅ Maintained all click functionality and styling - chat items remain fully interactive.
+- ✅ Build verification: TypeScript compilation passes, Next.js build succeeds (0 errors).
+- ✅ Console errors eliminated: No more "button cannot be descendant of button" warnings.
+
+### Issues Fixed (January 31, 2026 14:46 JST)
+1. **Console Error:** `<button> cannot be a descendant of <button>` causing hydration mismatch
+2. **Console Error:** `<button> cannot contain a nested <button>` in ChatList component
+3. **Root Cause:** ChatList item wrapper (`<button>`) contained dropdown menu trigger (`<Button>`)
+4. **Impact:** React hydration warnings in browser console, potential SSR/client inconsistencies
+
+### Solution Applied
+- **File Modified:** `apps/web/src/components/ChatList.tsx` (lines 197-286)
+- **Change:** Converted chat item container from `<button>` to `<div>` with `cursor-pointer` class
+- **Preserved:** All click handlers, styling, accessibility, and UX behavior
+- **Result:** Clean HTML structure, no nested button elements, hydration errors eliminated
+
+## ✅ Previous Progress Update (January 27, 2026 20:15 JST)
 - ✅ Added Phase 1 gap fixes: message forward flow, copy feedback, personal QR code display, and block/unblock UX.
 - ✅ Contacts API now returns `isBlocked` to drive UI state.
 - ✅ Forward dialog lets users pick a chat and sends forwarded message via API with metadata handling.

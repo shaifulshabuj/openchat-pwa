@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify'
+import { randomBytes } from 'crypto'
 import { prisma } from '../utils/database.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { createChatSchema, sendMessageSchema } from '../utils/validation.js'
@@ -38,6 +39,10 @@ const getPrivateContactState = async (chatId: string) => {
   }
 
   return { requestMeta, blockMeta }
+}
+
+const generateInviteCode = () => {
+  return randomBytes(9).toString('base64url')
 }
 
 export default async function chatRoutes(fastify: FastifyInstance) {
@@ -738,14 +743,14 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         })
       }
 
-      // Check if message is too old to edit (24 hours)
+      // Check if message is too old to edit (5 minutes)
       const now = new Date()
       const messageAge = now.getTime() - message.createdAt.getTime()
-      const maxAge = 24 * 60 * 60 * 1000 // 24 hours
+      const maxAge = 5 * 60 * 1000 // 5 minutes
 
       if (messageAge > maxAge) {
         return reply.status(400).send({
-          error: 'Message is too old to edit (24 hour limit)'
+          error: 'Message is too old to edit (5 minute limit)'
         })
       }
 
@@ -945,6 +950,548 @@ export default async function chatRoutes(fastify: FastifyInstance) {
           details: error.errors
         })
       }
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Group Invitations
+
+  // Create invitation link for group
+  fastify.post('/:chatId/invitations', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { chatId } = request.params
+      const { expiresInHours, expiresAt } = z.object({
+        expiresInHours: z.number().int().min(1).max(720).optional(),
+        expiresAt: z.string().datetime().optional()
+      }).parse(request.body ?? {})
+
+      const adminCheck = await prisma.chatAdmin.findFirst({
+        where: { userId: request.auth.userId, chatId }
+      })
+
+      if (!adminCheck) {
+        return reply.status(403).send({ error: 'Only admins can create invitations' })
+      }
+
+      const chat = await prisma.chat.findUnique({
+        where: { id: chatId },
+        select: { id: true, type: true }
+      })
+
+      if (!chat || chat.type !== 'GROUP') {
+        return reply.status(404).send({ error: 'Group not found' })
+      }
+
+      let resolvedExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      if (expiresAt) {
+        const parsed = new Date(expiresAt)
+        if (Number.isNaN(parsed.getTime())) {
+          return reply.status(400).send({ error: 'Invalid expiresAt value' })
+        }
+        resolvedExpiresAt = parsed
+      } else if (expiresInHours) {
+        resolvedExpiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000)
+      }
+
+      if (resolvedExpiresAt.getTime() <= Date.now()) {
+        return reply.status(400).send({ error: 'Expiration must be in the future' })
+      }
+
+      let invitation = null
+      let attempts = 0
+      while (!invitation && attempts < 5) {
+        attempts += 1
+        try {
+          invitation = await prisma.chatInvitation.create({
+            data: {
+              code: generateInviteCode(),
+              chatId,
+              createdById: request.auth.userId,
+              expiresAt: resolvedExpiresAt
+            }
+          })
+        } catch (error: any) {
+          if (error?.code !== 'P2002') {
+            throw error
+          }
+        }
+      }
+
+      if (!invitation) {
+        return reply.status(500).send({ error: 'Unable to create invitation' })
+      }
+
+      return reply.status(201).send({
+        success: true,
+        data: invitation
+      })
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return reply.status(400).send({
+          error: 'Validation failed',
+          details: error.errors
+        })
+      }
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Validate invitation code and return group info
+  fastify.get('/invitations/:code', async (request: any, reply) => {
+    try {
+      const { code } = request.params
+      const invitation = await prisma.chatInvitation.findUnique({
+        where: { code },
+        include: {
+          chat: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              avatar: true,
+              type: true,
+              participants: {
+                where: { leftAt: null },
+                select: { id: true }
+              }
+            }
+          }
+        }
+      })
+
+      if (!invitation || !invitation.chat || invitation.chat.type !== 'GROUP') {
+        return reply.status(404).send({ error: 'Invitation not found' })
+      }
+
+      if (invitation.revokedAt || invitation.expiresAt.getTime() <= Date.now()) {
+        return reply.status(410).send({ error: 'Invitation expired or revoked' })
+      }
+
+      return reply.send({
+        success: true,
+        data: {
+          invitation: {
+            id: invitation.id,
+            code: invitation.code,
+            expiresAt: invitation.expiresAt,
+            createdAt: invitation.createdAt
+          },
+          chat: {
+            id: invitation.chat.id,
+            name: invitation.chat.name,
+            description: invitation.chat.description,
+            avatar: invitation.chat.avatar,
+            memberCount: invitation.chat.participants.length
+          }
+        }
+      })
+    } catch (error) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Accept invitation and join group
+  fastify.post('/invitations/:code/accept', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { code } = request.params
+      const invitation = await prisma.chatInvitation.findUnique({
+        where: { code },
+        include: {
+          chat: {
+            select: {
+              id: true,
+              type: true,
+              participants: {
+                where: { leftAt: null },
+                select: { id: true }
+              }
+            }
+          }
+        }
+      })
+
+      if (!invitation || !invitation.chat || invitation.chat.type !== 'GROUP') {
+        return reply.status(404).send({ error: 'Invitation not found' })
+      }
+
+      if (invitation.revokedAt || invitation.expiresAt.getTime() <= Date.now()) {
+        return reply.status(410).send({ error: 'Invitation expired or revoked' })
+      }
+
+      const existingParticipation = await prisma.chatParticipant.findFirst({
+        where: {
+          userId: request.auth.userId,
+          chatId: invitation.chat.id
+        }
+      })
+
+      if (existingParticipation && !existingParticipation.leftAt) {
+        return reply.send({
+          success: true,
+          data: { chatId: invitation.chat.id, alreadyMember: true }
+        })
+      }
+
+      if (invitation.chat.participants.length >= 500) {
+        return reply.status(400).send({ error: 'Group has reached maximum member limit (500)' })
+      }
+
+      await prisma.chatParticipant.upsert({
+        where: {
+          userId_chatId: {
+            userId: request.auth.userId,
+            chatId: invitation.chat.id
+          }
+        },
+        update: {
+          leftAt: null,
+          joinedAt: new Date()
+        },
+        create: {
+          userId: request.auth.userId,
+          chatId: invitation.chat.id
+        }
+      })
+
+      return reply.send({
+        success: true,
+        data: { chatId: invitation.chat.id, alreadyMember: false }
+      })
+    } catch (error) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Revoke invitation
+  fastify.delete('/:chatId/invitations/:invitationId', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { chatId, invitationId } = request.params
+      const adminCheck = await prisma.chatAdmin.findFirst({
+        where: { userId: request.auth.userId, chatId }
+      })
+
+      if (!adminCheck) {
+        return reply.status(403).send({ error: 'Only admins can revoke invitations' })
+      }
+
+      const invitation = await prisma.chatInvitation.findFirst({
+        where: { id: invitationId, chatId }
+      })
+
+      if (!invitation) {
+        return reply.status(404).send({ error: 'Invitation not found' })
+      }
+
+      const revoked = await prisma.chatInvitation.update({
+        where: { id: invitationId },
+        data: { revokedAt: new Date() }
+      })
+
+      return reply.send({
+        success: true,
+        data: revoked
+      })
+    } catch (error) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Group Management Endpoints
+
+  // Add member to group
+  fastify.post('/:chatId/members', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { chatId } = request.params
+      const { userId: targetUserId } = z.object({ userId: z.string() }).parse(request.body)
+      const userId = request.auth.userId
+
+      // Check if chat is a group
+      const chat = await prisma.chat.findUnique({
+        where: { id: chatId },
+        include: {
+          admins: { where: { userId } },
+          participants: true
+        }
+      })
+
+      if (!chat || chat.type !== 'GROUP') {
+        return reply.status(404).send({ error: 'Group not found' })
+      }
+
+      // Check if user is admin
+      if (!chat.admins.length) {
+        return reply.status(403).send({ error: 'Only admins can add members' })
+      }
+
+      // Check if target user is already a member
+      const existingMember = chat.participants.find(p => p.userId === targetUserId && !p.leftAt)
+      if (existingMember) {
+        return reply.status(400).send({ error: 'User is already a member' })
+      }
+
+      // Check group member limit (500)
+      const activeMembers = chat.participants.filter(p => !p.leftAt).length
+      if (activeMembers >= 500) {
+        return reply.status(400).send({ error: 'Group has reached maximum member limit (500)' })
+      }
+
+      // Add member
+      await prisma.chatParticipant.upsert({
+        where: {
+          userId_chatId: {
+            userId: targetUserId,
+            chatId
+          }
+        },
+        update: {
+          leftAt: null,
+          joinedAt: new Date()
+        },
+        create: {
+          userId: targetUserId,
+          chatId
+        }
+      })
+
+      return reply.send({ success: true, message: 'Member added successfully' })
+    } catch (error: any) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Remove member from group
+  fastify.delete('/:chatId/members/:userId', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { chatId, userId: targetUserId } = request.params
+      const userId = request.auth.userId
+
+      // Check if chat is a group
+      const chat = await prisma.chat.findUnique({
+        where: { id: chatId },
+        include: {
+          admins: { where: { userId } },
+          participants: { where: { userId: targetUserId } }
+        }
+      })
+
+      if (!chat || chat.type !== 'GROUP') {
+        return reply.status(404).send({ error: 'Group not found' })
+      }
+
+      // Check if user is admin or removing themselves
+      const isAdmin = chat.admins.length > 0
+      const isSelf = userId === targetUserId
+
+      if (!isAdmin && !isSelf) {
+        return reply.status(403).send({ error: 'Only admins can remove members' })
+      }
+
+      // Check if target is a member
+      const targetMember = chat.participants[0]
+      if (!targetMember || targetMember.leftAt) {
+        return reply.status(404).send({ error: 'User is not a member of this group' })
+      }
+
+      // Remove member by setting leftAt
+      await prisma.chatParticipant.update({
+        where: { id: targetMember.id },
+        data: { leftAt: new Date() }
+      })
+
+      // If admin is removing themselves, remove admin role too
+      if (isSelf) {
+        await prisma.chatAdmin.deleteMany({
+          where: { userId, chatId }
+        })
+      }
+
+      return reply.send({ success: true, message: 'Member removed successfully' })
+    } catch (error: any) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Promote member to admin
+  fastify.post('/:chatId/admins', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { chatId } = request.params
+      const { userId: targetUserId } = z.object({ userId: z.string() }).parse(request.body)
+      const userId = request.auth.userId
+
+      // Check if user is admin
+      const adminCheck = await prisma.chatAdmin.findFirst({
+        where: { userId, chatId }
+      })
+
+      if (!adminCheck) {
+        return reply.status(403).send({ error: 'Only admins can promote members' })
+      }
+
+      // Check if target is a member
+      const member = await prisma.chatParticipant.findFirst({
+        where: { userId: targetUserId, chatId, leftAt: null }
+      })
+
+      if (!member) {
+        return reply.status(404).send({ error: 'User is not a member of this group' })
+      }
+
+      // Check if already admin
+      const existingAdmin = await prisma.chatAdmin.findFirst({
+        where: { userId: targetUserId, chatId }
+      })
+
+      if (existingAdmin) {
+        return reply.status(400).send({ error: 'User is already an admin' })
+      }
+
+      // Promote to admin
+      await prisma.chatAdmin.create({
+        data: {
+          userId: targetUserId,
+          chatId
+        }
+      })
+
+      return reply.send({ success: true, message: 'Member promoted to admin successfully' })
+    } catch (error: any) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Demote admin to member  
+  fastify.delete('/:chatId/admins/:userId', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { chatId, userId: targetUserId } = request.params
+      const userId = request.auth.userId
+
+      // Check if user is admin
+      const adminCheck = await prisma.chatAdmin.findFirst({
+        where: { userId, chatId }
+      })
+
+      if (!adminCheck) {
+        return reply.status(403).send({ error: 'Only admins can demote members' })
+      }
+
+      // Check how many admins are left
+      const adminCount = await prisma.chatAdmin.count({
+        where: { chatId }
+      })
+
+      if (adminCount <= 1) {
+        return reply.status(400).send({ error: 'Cannot demote the last admin' })
+      }
+
+      // Remove admin role
+      await prisma.chatAdmin.deleteMany({
+        where: { userId: targetUserId, chatId }
+      })
+
+      return reply.send({ success: true, message: 'Admin demoted to member successfully' })
+    } catch (error: any) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Update group settings (name, description, avatar)
+  fastify.put('/:chatId/settings', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { chatId } = request.params
+      const updateData = z.object({
+        name: z.string().optional(),
+        description: z.string().optional(),
+        avatar: z.string().optional()
+      }).parse(request.body)
+      const data: { name?: string; description?: string; avatar?: string } = {}
+      if (updateData.name !== undefined) data.name = updateData.name
+      if (updateData.description !== undefined) data.description = updateData.description
+      if (updateData.avatar !== undefined) data.avatar = updateData.avatar
+
+      // Check if user is admin
+      const adminCheck = await prisma.chatAdmin.findFirst({
+        where: { userId: request.auth.userId, chatId }
+      })
+
+      if (!adminCheck) {
+        return reply.status(403).send({ error: 'Only admins can update group settings' })
+      }
+
+      // Update group
+      const updatedChat = await prisma.chat.update({
+        where: { id: chatId },
+        data
+      })
+
+      return reply.send({ 
+        success: true, 
+        data: {
+          id: updatedChat.id,
+          name: updatedChat.name,
+          description: updatedChat.description,
+          avatar: updatedChat.avatar
+        }
+      })
+    } catch (error: any) {
+      fastify.log.error(error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
+
+  // Get group members with roles
+  fastify.get('/:chatId/members', { preHandler: authMiddleware }, async (request: any, reply) => {
+    try {
+      const { chatId } = request.params
+
+      // Check if user is a member
+      const memberCheck = await prisma.chatParticipant.findFirst({
+        where: { userId: request.auth.userId, chatId, leftAt: null }
+      })
+
+      if (!memberCheck) {
+        return reply.status(403).send({ error: 'Not a member of this group' })
+      }
+
+      const members = await prisma.chatParticipant.findMany({
+        where: { chatId, leftAt: null },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatar: true,
+              status: true
+            }
+          }
+        }
+      })
+
+      const admins = await prisma.chatAdmin.findMany({
+        where: { chatId },
+        select: { userId: true }
+      })
+
+      const adminUserIds = new Set(admins.map(a => a.userId))
+
+      const membersWithRoles = members.map(member => ({
+        id: member.id,
+        user: member.user,
+        joinedAt: member.joinedAt,
+        isAdmin: adminUserIds.has(member.userId)
+      }))
+
+      return reply.send({ success: true, data: membersWithRoles })
+    } catch (error: any) {
       fastify.log.error(error)
       return reply.status(500).send({ error: 'Internal server error' })
     }

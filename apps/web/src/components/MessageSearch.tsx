@@ -3,27 +3,7 @@ import { Search, X, ChevronUp, ChevronDown, LoaderCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-
-interface Message {
-  id: string
-  content: string
-  createdAt: string
-  sender: {
-    id: string
-    username: string
-    displayName: string | null
-    avatar: string | null
-  }
-  replyTo?: {
-    id: string
-    content: string
-    sender: {
-      id: string
-      username: string
-      displayName: string | null
-    }
-  } | null
-}
+import { chatAPI, type Message } from '@/lib/api'
 
 interface MessageSearchProps {
   chatId: string
@@ -68,45 +48,32 @@ export default function MessageSearch({
 
     setLoading(true)
     try {
-      const params = new URLSearchParams({
-        q: searchQuery,
-        page: page.toString(),
-        limit: '20'
-      })
-
-      const response = await fetch(
-        `/api/chats/${chatId}/messages/search?${params}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      )
-
-      if (response.ok) {
-        const data: SearchResult = await response.json()
+      const response = await chatAPI.searchMessages(chatId, searchQuery, page, 20)
+      
+      if (response.success) {
         if (page === 1) {
-          setResults(data.data)
-          setTotalResults(data.data.length)
-          setCurrentIndex(data.data.length > 0 ? 1 : 0)
+          setResults(response.data)
+          setTotalResults(response.data.length)
+          setCurrentIndex(response.data.length > 0 ? 1 : 0)
         } else {
-          setResults(prev => [...prev, ...data.data])
-          setTotalResults(prev => prev + data.data.length)
+          setResults(prev => [...prev, ...response.data])
+          setTotalResults(prev => prev + response.data.length)
         }
-        setHasMore(data.pagination.hasMore)
+        setHasMore(response.pagination.hasMore)
       } else {
-        console.error('Search failed:', response.status)
+        console.error('Search failed: API returned success: false')
         setResults([])
         setTotalResults(0)
         setCurrentIndex(0)
       }
-    } catch (error) {
-      console.error('Search error:', error)
+    } catch (error: any) {
+      console.error('Search failed:', error.response?.status || error.message)
       setResults([])
       setTotalResults(0)
       setCurrentIndex(0)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   // Handle query changes with debounce

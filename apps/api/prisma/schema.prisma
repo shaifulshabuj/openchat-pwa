@@ -28,6 +28,7 @@ model User {
   sentMessages     Message[] @relation("MessageSender")
   chatParticipants ChatParticipant[]
   chatAdmins       ChatAdmin[]
+  chatInvitations  ChatInvitation[] @relation("ChatInvitationCreator")
   messageReactions MessageReaction[]
   messageStatuses  MessageStatus[]
 
@@ -48,6 +49,7 @@ model Chat {
   messages     Message[]
   participants ChatParticipant[]
   admins       ChatAdmin[]
+  invitations  ChatInvitation[]
 
   @@map("chats")
 }
@@ -82,6 +84,24 @@ model ChatAdmin {
 
   @@unique([userId, chatId])
   @@map("chat_admins")
+}
+
+model ChatInvitation {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  chatId      String
+  createdById String
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  chat       Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  createdBy  User @relation("ChatInvitationCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([expiresAt])
+  @@map("chat_invitations")
 }
 
 model Message {

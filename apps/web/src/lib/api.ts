@@ -93,6 +93,13 @@ export interface Chat {
     user: User
     joinedAt: string
   }>
+  admins?: Array<{
+    user: {
+      id: string
+      username: string
+      displayName: string
+    }
+  }>
   lastMessage?: Message
   unreadCount: number
   createdAt: string
@@ -118,6 +125,16 @@ export interface Message {
     avatar?: string
   }
   replyTo?: Message
+}
+
+export interface ChatInvitation {
+  id: string
+  code: string
+  chatId: string
+  createdById: string
+  expiresAt: string
+  revokedAt?: string | null
+  createdAt: string
 }
 
 // Auth API functions
@@ -239,6 +256,64 @@ export const chatAPI = {
       params: { q: query, page, limit }
     })
     return response.data
+  },
+
+  // Group Management
+  async getGroupMembers(chatId: string) {
+    const response = await api.get(`/api/chats/${chatId}/members`)
+    return response.data
+  },
+
+  async addGroupMember(chatId: string, userId: string) {
+    const response = await api.post(`/api/chats/${chatId}/members`, { userId })
+    return response.data
+  },
+
+  async removeGroupMember(chatId: string, userId: string) {
+    const response = await api.delete(`/api/chats/${chatId}/members/${userId}`)
+    return response.data
+  },
+
+  async promoteAdmin(chatId: string, userId: string) {
+    const response = await api.post(`/api/chats/${chatId}/admins`, { userId })
+    return response.data
+  },
+
+  async demoteAdmin(chatId: string, userId: string) {
+    const response = await api.delete(`/api/chats/${chatId}/admins/${userId}`)
+    return response.data
+  },
+
+  async updateGroupSettings(chatId: string, data: { name?: string, description?: string, avatar?: string }) {
+    const response = await api.put(`/api/chats/${chatId}/settings`, data)
+    return response.data
+  },
+
+  // Group Invitations
+  async createGroupInvitation(chatId: string, data?: { expiresInHours?: number; expiresAt?: string }) {
+    const response = await api.post(`/api/chats/${chatId}/invitations`, data ?? {})
+    return response.data as { success: boolean; data: ChatInvitation }
+  },
+
+  async validateInvitation(code: string) {
+    const response = await api.get(`/api/chats/invitations/${code}`)
+    return response.data as {
+      success: boolean
+      data: {
+        invitation: Pick<ChatInvitation, 'id' | 'code' | 'expiresAt' | 'createdAt'>
+        chat: { id: string; name?: string; description?: string; avatar?: string; memberCount: number }
+      }
+    }
+  },
+
+  async acceptInvitation(code: string) {
+    const response = await api.post(`/api/chats/invitations/${code}/accept`)
+    return response.data as { success: boolean; data: { chatId: string; alreadyMember: boolean } }
+  },
+
+  async revokeInvitation(chatId: string, invitationId: string) {
+    const response = await api.delete(`/api/chats/${chatId}/invitations/${invitationId}`)
+    return response.data as { success: boolean; data: ChatInvitation }
   },
 }
 

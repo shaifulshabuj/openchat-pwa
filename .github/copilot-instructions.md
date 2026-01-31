@@ -21,7 +21,7 @@ Execute tasks using this 7-phase workflow. Each phase is mandatory and must be c
    - Note any strict constraints or DO NOT rules
 
 2. **Review Recent Progress:**
-   - Read `.codex/works/codex_work_progress_and_reply.md` for last completed work
+   - Read `.codex/works/codex_work_progress_and_reply.md` for last completed work by Codex CLI
    - Check `work_reports/01_PROJECT_STATUS.md` for feature status
    - Scan `work_reports/02_LOCAL_TEST_THEN_FIX_LOG.md` for recent fixes (last 10 entries)
    - Review `CHANGELOG.md` for latest version state
@@ -172,8 +172,12 @@ codex apply "Run Playwright UI flow per .codex/skills/openchat-playwright-ui-tes
 **Verification Steps:**
 
 1. **Run Skill Quality Gates:**
+   - **For feature verification (preferred):** [# Assign codex to run tests and checks, then extract result and logs]
+     * Use Docker-based local test stack from `.codex/skills/openchat-docker-local-testing/SKILL.md`.
+     * Verify features in-browser using Playwright MCP (`openchat-playwright-ui-testing`).
+     * Log the Playwright run to `.codex/test_log/` using `YYMMDDHHMMSS_log_<testing item name>.md`.
    - **For Docker tasks:**
-     * Containers start: `docker compose -f docker-compose.local-test.yml ps`
+     * Containers start: `docker builder prune -f && docker compose -f docker-compose.local-test.yml build --no-cache api && docker compose -f docker-compose.local-test.yml build --no-cache web && docker compose -f docker-compose.local-test.yml up -d ps`
      * Web reachable: `curl http://localhost:3000/`
      * API reachable: `curl http://localhost:8080/health`
      * Logs clean: `docker compose logs --tail=50 | grep -i error`
@@ -192,6 +196,7 @@ codex apply "Run Playwright UI flow per .codex/skills/openchat-playwright-ui-tes
      * Flow completes without errors
      * Expected elements visible
      * State changes persisted
+     * **Log required:** When Codex uses Playwright, it must write a log file to `.codex/test_log/` using the naming format `YYMMDDHHMMSS_log_<testing item name>.md`.
 
 2. **Extract Artifacts:**
    - **Files Updated:** List all modified files
@@ -211,10 +216,14 @@ codex apply "Run Playwright UI flow per .codex/skills/openchat-playwright-ui-tes
      - `apps/web/src/components/ContactsPanel.tsx` (description)
      ```
 
-4. **Update Progress Tracking:**
+4. **Update Progress Tracking when task delegate a task to codex cli:**
    - Mark task complete in `.codex/works/codex_next_priorities.md`
-   - Update `.codex/works/codex_work_progress_and_reply.md` with summary
+   - Instruct Codex cli to update `.codex/works/codex_work_progress_and_reply.md` with summary
    - If spec-related, update `work_reports/00_FEATURE_CHECKLIST.md` status (✅/⚠️/❌)
+   - For overall progress, Update `work_reports/01_PROJECT_STATUS.md` progress
+   - For Playwright tests, ensure log file created in `.codex/test_log/` with proper naming format
+   - For local testing/fixing related logs, update `work_reports/02_LOCAL_TEST_REPORT.md` with results
+   !!Important: Don't change the 00_SPECIFICATION_OPENCHAT_PWA.md file without permission!!
 
 **Success Criteria:**
 - All quality gates pass
