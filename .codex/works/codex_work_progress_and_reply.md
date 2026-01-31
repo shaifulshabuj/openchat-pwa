@@ -48,5 +48,22 @@
 - Unread badge is now client-side consistent based on last seen timestamp; backend `unreadCount` is unchanged.
 
 ## Next Priority Task Assigned
-- Task 2: Production build optimization (API production configuration and verification).
-- Focus: production build scripts, error handling, performance/security middleware, and verify `NODE_ENV=production npm start`.
+**Current Date:** January 31, 2026
+
+**IMMEDIATE PRIORITIES:**
+1. **Phase 1 MVP Completion** - Address remaining gaps from `work_reports/00_FEATURE_CHECKLIST.md`:
+   - Message search functionality (high priority)
+   - Conversation pinning/archiving (UX priority)
+   - Video/audio handling improvements
+   - Mobile photo picker fixes (HEIC/HEIF)
+
+2. **Production Deployment** - After Phase 1 completion:
+   - API production optimization and Railway deployment
+   - Web production build and GitHub Pages deployment
+   - Performance monitoring and optimization
+
+**WORKFLOW:**
+- Use `openchat-spec-progress-logging` skill to track gaps
+- Reference `.codex/works/codex_next_priorities.md` for detailed tasks
+- Update `work_reports/00_FEATURE_CHECKLIST.md` after each feature completion
+- Follow orchestration protocol in `.github/copilot-instructions.md`

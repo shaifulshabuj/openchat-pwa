@@ -1,9 +1,9 @@
 # 🤖 Codex CLI Agent Instructions - OpenChat PWA Next Priorities
 
 **Project:** OpenChat PWA  
-**Current Status:** ✅ Critical issues resolved, API documentation complete, Node.js v22 ready  
-**Agent Role:** Complete remaining test fixes and deploy production build  
-**Last Update:** January 26, 2026 - Previous priorities completed successfully  
+**Current Status:** ✅ Phase 1 MVP ~90% complete, Contact management shipped, Production ready  
+**Agent Role:** Complete Phase 1 gaps and prepare Phase 2 features  
+**Last Update:** January 31, 2026 - Contact management completed successfully  
 
 ---
 
@@ -52,60 +52,80 @@
 - ✅ Tests aligned with current API responses
 - ✅ Test structure validated and ready
 
-**⏭️ SKIPPED: Database Test Environment Setup**
-- Tests require PostgreSQL connection for execution
-- Test code is correct and complete
-- Skipping database setup for now - focusing on production priorities
+**✅ TASK 1: Contact Management - COMPLETED (January 31, 2026)**
+- ✅ Contact search by username/email
+- ✅ Contact request send/accept/decline flow
+- ✅ Contact list UI with search functionality
+- ✅ Personal QR code generation and display
+- ✅ QR code scanning (camera + paste input)
+- ✅ Block/unblock contacts functionality
+- ✅ Start new chat from contacts
+- ✅ Contact status updates (online/offline)
+- ✅ API: `apps/api/src/routes/contacts.ts`, `apps/api/src/services/contacts.ts`
+- ✅ Web UI: Contact panel, QR scanner, contact management
+- ✅ Tests: 36/36 API tests passing
 
 ---
 
-## 🎯 **PRIORITY TASK 1: Contact Management to Enable Chat Start (COMPLETED)**
+## 🎯 **CURRENT PRIORITIES (January 31, 2026)**
 
-**Current Status:** ✅ Implemented contact search, requests, contact list UI, start chat flow, QR add, block/unblock  
-**Target:** Allow users to find/add contacts and start new conversations from the UI  
+### **PRIORITY TASK 1: Phase 1 MVP Completion - Remaining Gaps**
 
-**Instructions:**
+**Current Status:** 📋 Phase 1 is ~90% complete per `work_reports/00_FEATURE_CHECKLIST.md`  
+**Target:** Complete remaining Phase 1 features to reach 100% MVP status  
+
+**Remaining Phase 1 Gaps (from Feature Checklist):**
 
 ```bash
-TASK: Implement contact management (minimum viable) to enable starting chats
+FEATURES TO IMPLEMENT:
 
-FEATURES REQUIRED:
-1. Contact search (by username/email) and list results
-2. Add contact request + accept/decline flow
-3. Contact list UI with empty states and search
-4. Wire "+" (Start new conversation) to contact search/results
-5. QR code scan to add contacts (UI + API hook)
-6. Block/unblock contact (basic UI + API hook)
+1.1 Authentication:
+- [ ] Phone number registration with OTP
+- [ ] OAuth login (Google, GitHub, Apple)
+- [ ] Password reset via email
+- [ ] Two-Factor Authentication (2FA)
 
-SCOPE NOTES:
-- Keep auth logic unchanged
-- Use existing API response formats/patterns
-- Avoid schema changes unless absolutely required
+1.2 One-on-One Chat:
+- [ ] Message editing (align to 5min spec vs current 24h)
+- [ ] Message deletion scope (for everyone vs just me)
+- [ ] Message search functionality
+- [ ] Conversation pinning
+- [ ] Conversation archiving
 
-FILES TO MODIFY (likely):
-- apps/api/src/routes/contacts.ts (new or existing)
-- apps/api/src/routes/users.ts (search endpoint if missing)
-- apps/api/src/services/contacts.ts (new)
-- apps/api/src/index.ts (route registration)
-- apps/web/src/app/page.tsx (wire + button)
-- apps/web/src/components/Contacts/ (new UI components)
-- apps/web/src/services/contacts.ts (API client)
-- apps/web/src/store/contacts.ts (state management)
-- apps/web/src/components/QRCodeScanner.tsx (new)
+1.3 Media Sharing:
+- [ ] Fix mobile browser photo picker (HEIC/HEIF handling)
+- [ ] Video upload handling (MP4, WebM, MOV)
+- [ ] Audio messages (voice recording)
+- [ ] Video player with controls
+- [ ] Audio playback with waveform
+- [ ] Automatic image compression
+- [ ] Pause/resume uploads
+- [ ] Image editing (crop, rotate, filters)
 
-TESTING:
-- npx vitest run (apps/api)
-- Manual: open app, search user, add contact, start chat
+1.4 Contacts:
+- [ ] Phone number search for contacts
+- [ ] Contact favorites/starred
+- [ ] Import from device contacts
+- [ ] Contact nicknames
+- [ ] Contact labels/tags
+
+PRIORITY ORDER:
+1. Message search (high user value)
+2. Conversation pinning/archiving (UX improvement)
+3. Video/audio handling (media completeness)
+4. Advanced contact features (lower priority)
+5. Additional auth methods (can be Phase 2)
+
+NOTE: Consult `work_reports/00_SPECIFICATION_OPENCHAT_PWA.md` and 
+`work_reports/00_FEATURE_CHECKLIST.md` for detailed requirements.
 ```
-
-**Completed:** ✅ Contact management shipped; start new conversation is wired to contact search.
 
 ---
 
-## 🎯 **PRIORITY TASK 2: Production Build Optimization (NEXT)**
+### **PRIORITY TASK 2: Production Optimization & Deployment**
 
-**Current Status:** API runs successfully but needs production optimization  
-**Target:** Prepare production-ready build with optimizations  
+**Current Status:** 📋 API and Web running locally, needs production hardening  
+**Target:** Production-ready deployment with monitoring and optimization  
 
 **Instructions:**
 
