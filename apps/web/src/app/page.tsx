@@ -21,6 +21,7 @@ import { ChatList } from '@/components/ChatList'
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle'
 import { ContactsPanel } from '@/components/Contacts/ContactsPanel'
 import { GroupCreationModal } from '@/components/GroupCreationModal'
+import GroupSearch from '@/app/groups/page'
 import { chatAPI } from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -136,8 +137,8 @@ export default function Home() {
           <div className="flex">
             {[
               { id: 'chats', label: 'Chats', icon: MessageSquare },
-              { id: 'contacts', label: 'Contacts', icon: Users },
-              { id: 'calls', label: 'Calls', icon: Phone },
+              { id: 'groups', label: 'Groups', icon: Users },
+              { id: 'contacts', label: 'Contacts', icon: UserPlus },
               { id: 'settings', label: 'Settings', icon: Settings },
             ].map((tab) => {
               const Icon = tab.icon
@@ -185,28 +186,24 @@ export default function Home() {
                       <Users className="w-4 h-4 mr-2" />
                       Create Group
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/groups' as any)}>
+                      <Search className="w-4 h-4 mr-2" />
+                      Find Groups
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             </div>
           )}
 
-          {activeTab === 'contacts' && (
-            <ContactsPanel />
+          {activeTab === 'groups' && (
+            <div className="h-full overflow-y-auto">
+              <GroupSearch />
+            </div>
           )}
 
-          {activeTab === 'calls' && (
-            <div className="h-full flex items-center justify-center p-8">
-              <div className="text-center">
-                <Phone className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  Voice & Video Calls
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  WebRTC integration planned for Phase 2
-                </p>
-              </div>
-            </div>
+          {activeTab === 'contacts' && (
+            <ContactsPanel />
           )}
 
           {activeTab === 'settings' && (

@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Search, Users, Plus, Settings } from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
-import { useToast } from '@/hooks/useToast'
+import { useAuthStore } from '@/store/auth'
+import { useToast } from '@/hooks/use-toast'
 
 interface Group {
   id: string
@@ -34,13 +34,21 @@ interface SearchResult {
 }
 
 export default function GroupsPage() {
-  const { user, token } = useAuth()
-  const { showToast } = useToast()
+  const { user, token } = useAuthStore()
+  const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState('')
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [offset, setOffset] = useState(0)
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    toast({
+      title: type === 'success' ? 'Success' : 'Error',
+      description: message,
+      variant: type === 'error' ? 'destructive' : 'default',
+    })
+  }
 
   const searchGroups = useCallback(async (query: string, reset = true) => {
     if (!token || query.length < 2) return
@@ -67,17 +75,18 @@ export default function GroupsPage() {
         throw new Error('Failed to search groups')
       }
 
-      const data: SearchResult = await response.json()
+      const responseData = await response.json()
+      const data: SearchResult = responseData.data // Extract data from the API response wrapper
       
       if (reset) {
-        setGroups(data.data.groups)
+        setGroups(data.groups || [])
         setOffset(20)
       } else {
-        setGroups(prev => [...prev, ...data.data.groups])
+        setGroups(prev => [...(prev || []), ...(data.groups || [])])
         setOffset(prev => prev + 20)
       }
       
-      setHasMore(data.data.pagination.hasMore)
+      setHasMore(data.pagination?.hasMore || false)
     } catch (error) {
       console.error('Error searching groups:', error)
       showToast('Failed to search groups', 'error')
@@ -178,14 +187,14 @@ export default function GroupsPage() {
       </form>
 
       {/* Search Results */}
-      {groups.length > 0 && (
+      {groups && groups.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Search Results ({groups.length} groups found)
+            Search Results ({groups?.length || 0} groups found)
           </h2>
           
           <div className="grid gap-4">
-            {groups.map((group) => (
+            {groups?.map((group) => (
               <div
                 key={group.id}
                 className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
@@ -268,7 +277,7 @@ export default function GroupsPage() {
       )}
 
       {/* Empty State */}
-      {groups.length === 0 && searchQuery && !loading && (
+      {(groups?.length === 0) && searchQuery && !loading && (
         <div className="text-center py-12">
           <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -281,7 +290,7 @@ export default function GroupsPage() {
       )}
 
       {/* Initial State */}
-      {groups.length === 0 && !searchQuery && (
+      {(groups?.length === 0) && !searchQuery && (
         <div className="text-center py-12">
           <Search className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -293,7 +302,7 @@ export default function GroupsPage() {
         </div>
       )}
 
-      {loading && groups.length === 0 && (
+      {loading && (groups?.length === 0) && (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="text-gray-600 mt-2">Searching groups...</p>

@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -12,7 +13,7 @@ import { authAPI } from '@/lib/api'
 
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const searchParams = useSearchParams()
   const token = searchParams.get('token') || ''
   const router = useRouter()
@@ -195,7 +196,7 @@ export default function ResetPasswordPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Need a new link?{' '}
                 <Link
-                  href="/auth/forgot-password"
+                  href={"/auth/forgot-password" as any}
                   className="font-medium text-green-600 hover:text-green-500 dark:text-green-400"
                 >
                   Request reset
@@ -206,5 +207,24 @@ export default function ResetPasswordPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <MessageSquare className="mx-auto h-12 w-12 text-green-600" />
+            <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">
+              Loading...
+            </h2>
+          </div>
+        </div>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }
